@@ -1,0 +1,5 @@
+name="litiom"
+version="0.1"
+description="The Litiom library"
+requires="threads,lwt,ocsigen"
+archive(byte)="litiom.cma"
