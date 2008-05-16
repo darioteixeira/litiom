@@ -24,6 +24,7 @@ sig
 	type t = Proceed | Cancel
 	val of_string : string -> t
 	val to_string : t -> string
+	val param_label : string
 	val param : (t, [`WithoutSuffix], [`One of t] Eliom_parameters.param_name) Eliom_parameters.params_type
 	val make_controls : [< t Eliom_parameters.setoneopt] Eliom_parameters.param_name -> [> `Fieldset] XHTML.M.elt
 end
@@ -44,7 +45,9 @@ struct
 		| Proceed	-> "Proceed"
 		| Cancel	-> "Cancel"
 
-	let param = Eliom_parameters.user_type of_string to_string "submit"
+	let param_label = "submit"
+
+	let param = Eliom_parameters.user_type of_string to_string param_label
 
 	let make_controls enter_submit =
 		fieldset ~a:[a_class ["wizard_buttons"]]
@@ -123,6 +126,32 @@ struct
 
 
 (********************************************************************************)
+(* Error_handler module.							*)
+(********************************************************************************)
+
+(**	The [Error_handler] module will do this and that.
+*)
+module Error_handler =
+struct
+	let inter ~cancel_canvas ~error_canvas ~tree_builder =
+		fun sp exc_list ->
+			Eliom_sessions.get_post_params ~sp >>= fun params ->
+			let maybe_submit =
+				try
+					let (_, submit_raw) = List.find (fun (k, v) -> k = Submit.param_label) params
+					in Some (Submit.of_string submit_raw)
+				with
+					| Not_found
+					| Invalid_argument _ -> None in
+			let canvas_tree = match maybe_submit with
+				| None
+				| Some Submit.Proceed	-> error_canvas exc_list
+				| Some Submit.Cancel	-> cancel_canvas
+			in tree_builder sp canvas_tree
+end
+
+
+(********************************************************************************)
 (* Register module.								*)
 (********************************************************************************)
 
@@ -133,11 +162,12 @@ struct
 	let initial ~fallback ~handler =
 		Eliom_predefmod.Xhtml.register fallback handler
 
-	let inter ~fallback ~handler ~params ~carry sp =
+	let inter ~fallback ~handler ~error_handler ~params ~carry sp =
 		Eliom_predefmod.Xhtml.register_new_post_coservice_for_session
 			~sp
 			~fallback
 			~post_params: (params ** Submit.param)
+			~error_handler
 			(handler ~carry)
 
 end
@@ -154,29 +184,86 @@ struct
 
 	(**	Adds the first step.
 	*)
-	let make_first ~fallback ~tree_builder ~carrier ~form_contents ~next_step_register =
-		let canvas = Canvas.inter ~form_contents in
-		let handler = Handler.initial ~carrier ~next_step_register ~tree_builder ~canvas in
-		let register = Register.initial ~fallback ~handler in
-		register
+	let make_first
+		~fallback
+		~tree_builder
+		~carrier
+		~form_contents
+		~next_step_register =
+
+		let canvas = Canvas.inter
+				~form_contents in
+		let handler = Handler.initial
+				~carrier
+				~next_step_register
+				~tree_builder
+				~canvas in
+		let register = Register.initial
+				~fallback
+				~handler
+		in register
 
 
 	(**	Adds a middle step.
 	*)
-	let make_middle ~fallback ~tree_builder ~carrier ~form_contents ~next_step_register ~cancel_canvas ~params =
-		let canvas = Canvas.inter ~form_contents in
-		let handler = Handler.inter ~carrier ~next_step_register ~cancel_canvas ~tree_builder ~canvas in
-		let register = Register.inter ~fallback ~handler ~params in
-		register
+	let make_middle
+		~fallback
+		~tree_builder
+		~carrier
+		~form_contents
+		~next_step_register
+		~cancel_canvas
+		~error_canvas
+		~params =
+
+		let canvas = Canvas.inter
+				~form_contents in
+		let handler = Handler.inter
+				~carrier
+				~next_step_register
+				~cancel_canvas
+				~tree_builder
+				~canvas in
+		let error_handler = Error_handler.inter
+				~cancel_canvas
+				~error_canvas
+				~tree_builder in
+		let register = Register.inter
+				~fallback
+				~handler
+				~error_handler
+				~params
+		in register
 
 
 	(**	Adds the last step.
 	*)
-	let make_last ~fallback ~tree_builder ~carrier ~form_contents ~cancel_canvas ~params =
-		let canvas = Canvas.final ~form_contents in
-		let handler = Handler.final ~carrier ~cancel_canvas ~tree_builder ~canvas in
-		let register = Register.inter ~fallback ~handler ~params in
-		register
+	let make_last
+		~fallback
+		~tree_builder
+		~carrier
+		~form_contents
+		~cancel_canvas
+		~error_canvas
+		~params =
+
+		let canvas = Canvas.final
+				~form_contents in
+		let handler = Handler.final
+				~carrier
+				~cancel_canvas
+				~tree_builder
+				~canvas in
+		let error_handler = Error_handler.inter
+				~cancel_canvas
+				~error_canvas
+				~tree_builder in
+		let register = Register.inter
+				~fallback
+				~handler
+				~error_handler
+				~params
+		in register
 end
 
 
