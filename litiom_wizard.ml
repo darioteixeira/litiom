@@ -17,6 +17,8 @@ open Eliom_parameters
 (* Submit module.								*)
 (********************************************************************************)
 
+(**	The type of the [Submit] module.
+*)
 module type SUBMIT =
 sig
 	type t = Proceed | Cancel
@@ -27,6 +29,8 @@ sig
 end
 
 
+(**	The [Submit] module will do this and that.
+*)
 module Submit : SUBMIT =
 struct
 	type t = Proceed | Cancel
@@ -65,6 +69,8 @@ end
 (* Canvas module.								*)
 (********************************************************************************)
 
+(**	The [Canvas] module will do this and that.
+*)
 module Canvas =
 struct
 	let inter ~form_contents ~next_step ~carry sp x =
@@ -81,6 +87,8 @@ end
 (* Handler module.								*)
 (********************************************************************************)
 
+(**	The [Handler] module will do this and that.
+*)
 module Handler =
 struct
 	let initial ~carrier ~next_step_register ~tree_builder ~canvas =
@@ -118,6 +126,8 @@ struct
 (* Register module.								*)
 (********************************************************************************)
 
+(**	The [Register] module will do this and that.
+*)
 module Register =
 struct
 	let initial ~fallback ~handler =
@@ -137,6 +147,8 @@ end
 (* Steps module.								*)
 (********************************************************************************)
 
+(**	The [Steps] module does this and that.
+*)
 module Steps =
 struct
 
@@ -172,6 +184,8 @@ end
 (* Carrier module.								*)
 (********************************************************************************)
 
+(**	The [Carrier] module does this and that.
+*)
 module Carrier =
 struct
 	let pairify a b = (a, b)
