@@ -177,12 +177,13 @@ end
 (* Steps module.								*)
 (********************************************************************************)
 
-(**	The [Steps] module does this and that.
+(**	The [Steps] module provides a low-level interface to the construction
+	of wizard-like interactions.
 *)
 module Steps =
 struct
 
-	(**	Adds the first step.
+	(**	Creates the first step of the wizard.
 	*)
 	let make_first
 		~fallback
@@ -204,7 +205,7 @@ struct
 		in register
 
 
-	(**	Adds a middle step.
+	(**	Creates a wizard's intermediate step (ie, a step which is neither the first nor the last).
 	*)
 	let make_middle
 		~fallback
@@ -236,7 +237,7 @@ struct
 		in register
 
 
-	(**	Adds the last step.
+	(**	Creates the last step of the wizard.
 	*)
 	let make_last
 		~fallback
@@ -268,16 +269,40 @@ end
 
 
 (********************************************************************************)
-(* Carrier module.								*)
+(* Carriers module.								*)
 (********************************************************************************)
 
-(**	The [Carrier] module does this and that.
+(**	The [Carriers] module includes some simple predefined functions that encode
+	the typical actions that each step of a wizard can take concerning passing
+	its parameters to the subsequent step.
 *)
-module Carrier =
+module Carriers =
 struct
-	let pairify a b = (a, b)
+	(**	This function will pass on to the next step a pair consisting of
+		the parameters accumulated from the previous step and the form
+		parameters given to the current step.
+	*)
+	let carry_both previous current = (previous, current)
 
-	let discard a b = ()
+
+	(**	This function will pass on to the next step only the parameters
+		accumulated from the previous step, discarding the form parameters
+		given to the current step.
+	*)
+	let carry_previous previous current = previous
+
+
+	(**	This function will pass on to the next step only the form parameters
+		given to the current step, discarding the parameters accumulated
+		from the previous step.
+	*)
+	let carry_current previous current = current
+
+
+	(**	This function will discard all parameters, passing on to the next
+		step only a value of type unit.
+	*)
+	let carry_none previous current = ()
 end
 
 
