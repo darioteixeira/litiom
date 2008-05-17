@@ -40,11 +40,11 @@
 			nodes that terminate the tree, sitting at its leaves.}}
 
 	Depending on whether the block is a generic processing node, a source, or a sink, use
-	respectively the {!Litiom_blocks.node}, {!Litiom_blocks.source}, or {!Litiom_blocks.sink}
-	constructor functions.  Each of these constructors takes only one parameter: the function
-	that defines the block.  This function should take two parameters as input: one is the
-	familiar [Eliom_sessions.server_params] common in [Eliom], the other is a value of either
-	type [unit] or a generic ['i] depending on the type of node.
+	respectively the {!node}, {!source}, or {!sink} constructor functions.  Each of these
+	constructors takes only one parameter: the function that defines the block.  This function
+	should take two parameters as input: one is the familiar [Eliom_sessions.server_params]
+	common in [Eliom], the other is a value of either type [unit] or a generic ['i] depending
+	on the type of node.
 
 	To define the structure of the tree, you must connect ("plumb") the various nodes
 	together.  Note that for this to happen, their return and input types must match
@@ -133,9 +133,9 @@
 		Lwt.return [div [h1 [pcdata "Generic footer"]]]
 	v}
 
-	Now we can define the tree structure.  Note that because the {!Litiom_blocks.splitter}
-	plumbing primitive requires an origin node, and we don't actually have one, we use the
-	predefined {!Litiom_blocks.root} node (a {i no-op}) as a stand-in:
+	Now we can define the tree structure.  Note that because the {!splitter} plumbing
+	primitive requires an origin node, and we don't actually have one, we use the
+	predefined {!root} node (a {i no-op}) as a stand-in:
 
 	{v
 	let tree =
@@ -153,7 +153,7 @@
 			]
 	v}
 
-	We can now invoke the {!Litiom_blocks.run_tree} function to actually execute the above
+	We can now invoke the {!run_tree} function to actually execute the above
 	defined tree in the service handler:
 
 	{v

@@ -14,7 +14,7 @@ doc: lib
 	mkdir -p html
 	ocamlfind ocamldoc -package lwt,ocsigen -v -html -keep-code -d html -I _build/ \
 	litiom_blocks.mli litiom_blocks.ml \
-	litiom_wizard.ml
+	litiom_wizard.mli litiom_wizard.ml
 
 
 clean:
