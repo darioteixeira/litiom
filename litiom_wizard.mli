@@ -1,6 +1,9 @@
 (********************************************************************************)
 (**	Litiom_wizard module.
 
+	This module offers routines aiming to automate and simplify
+	the construction of wizard-like interactions in websites.
+
 	Copyright (c) 2008 Dario Teixeira (dario.teixeira\@yahoo.com)
 
 	This software is distributed under the terms of the GNU GPL version 2.
@@ -21,10 +24,10 @@
 	Wizard-like interactions can of course be built directly with [Eliom].
 	More specifically, the developer can make use of attached coservices
 	registered in session tables, taking advantage of the continuation-based
-	programming paradigm offered by [Eliom].  Since this is a fairly common
-	and repetitive pattern, it makes sense to "ditch that boilerplate" and
-	to create routines to automate the task.  Herein lies the rationale for
-	the {!Litiom_wizard} module.
+	programming paradigm offered by [Eliom].  However, since this is a fairly
+	common and repetitive pattern, it makes sense to "scratch that boilerplate"
+	and to create routines to automate the task.  Herein lies the rationale
+	for the {!Litiom_wizard} module.
 
 	So what does {!Litiom_wizard} offer?  Essentially, the developer only
 	needs to specify the non-repetitive contents of each dialog's form.
@@ -78,7 +81,9 @@
 	v}
 
 
-	We then define the standard handler, using the plumbing primitives from {!Litiom_blocks}:
+	We then define the standard page builder, using the plumbing primitives from {!Litiom_blocks}.
+	Note that the every page is composed of three visible boxes: a constant header and footer,
+	and a "canvas" box which varies from page to page.
 
 	{v
 	let standard_handler sp canvas_tree =
@@ -96,7 +101,9 @@
 			(body page_body))
 	v}
 
-	We can now declare the various steps of the wizard.
+
+	We must also declare the fallback for the wizard steps.  This fallback will be passed
+	to all the functions that create the wizard steps.
 
 	{v
 	let fallback =
@@ -106,7 +113,11 @@
                 ()
 	v}
 
-	The last step must be declared first.  Note the use of function {!Raw_steps.make_last}:
+	
+	We can at last create the various steps of the wizard.  Remember that because the level
+	of abstraction offered by {!Raw_steps} is still relatively close to the underlying [Eliom]
+	mechanisms, the steps must be declared in reverse order.  We therefore begin with the
+	last, created by function {!Raw_steps.make_last}:
 
 	{v
 	let step3 =
@@ -123,7 +134,11 @@
 			~form_contents: step3_contents
 	v}
 
-	Now the intermediate step:
+
+	Since this example contains a total of only three steps, there is only one intermediate
+	(ie, neither initial nor final) step.  It must be created with the {!Raw_steps.make_middle}
+	function.  Should there have been more intermediate steps, all of them would likewise have
+	been created via this function.
 
 	{v
 	let step2 =
@@ -146,7 +161,10 @@
 			~next_step_register: step3
 	v}
 
-	And finally the first step of the wizard:
+
+	Finally, we create the first step of the wizard.  Note that the first step does not take
+	any POST parameters, and does not require the provision of special canvases for error and
+	cancellation situations.
 
 	{v
 	let step1 =
