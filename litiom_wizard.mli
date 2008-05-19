@@ -21,11 +21,11 @@
 	that commonly found on GUI applications, where the user is presented with
 	an ordered sequence of dialog steps.
 
-	Wizard-like interactions can of course be built directly with [Eliom].
-	More specifically, the developer can make use of attached coservices
-	registered in session tables, taking advantage of the continuation-based
+	Wizard-like interactions can of course be built directly with [Eliom].  More
+	specifically, the developer can make use of attached coservices registered
+	in session tables, thereby taking advantage of the continuation-based
 	programming paradigm offered by [Eliom].  However, since this is a fairly
-	common and repetitive pattern, it makes sense to "scratch that boilerplate"
+	common and repetitive pattern, it makes sense to "scratch the boilerplate"
 	and to create routines to automate the task.  Herein lies the rationale
 	for the {!Litiom_wizard} module.
 
@@ -41,12 +41,16 @@
 	into two separate submodules.  The {!Raw_steps} submodule offers low-level
 	means of specifying the contents of the wizard, while the {!Standard}
 	submodule offers a simpler, higher-level (albeit less flexible) alternative.
-	This document continues with a brief tutorial on each of these interfaces.
+
+	This document continues with two tutorials, one for each of these two facilities.
+	Both tutorials are based on the same example: a three-step wizard that asks
+	for an integer [a] on the first step, another integer [b] on the second step,
+	and presents the result of [a+b] on the third and last step.
 *)
 
 
 (********************************************************************************)
-(**	{3 Low-level interface}							*)
+(**	{3 Tutorial: low-level interface}					*)
 (********************************************************************************)
 
 (**	The {!Raw_steps} module provides a low-level interface to the construction
@@ -60,8 +64,12 @@
 	relies on {!Litiom_blocks}, and therefore these blocks must be built to
 	satisfy the requirements of the latter module.  The first block, [get_login]
 	is a source node that returns the currently logged in user (or suppose it
-	does; to simplify the example if just returns a random integer).  The four
-	subsequent blocks are sinks, returning actual XHTML content:
+	does; to simplify the example if just returns a random integer).  The two
+	blocks that follow, [header] and [footer] will appear in every page.  Finally,
+	the blocks [cancel_canvas] and [error_canvas] are the special blocks that
+	should be shown should the user cancel the wizard or an error situation occur,
+	respectively.  Note that with the exception of [get_login], all blocks are
+	are sinks, returning actual XHTML content:
 
 	{v
 	let get_login sp () =
@@ -73,10 +81,10 @@
 	let footer _ _ =
 		Lwt.return [div [h1 [pcdata "Footer"]]]
 
-	let cancelled _ _ =
+	let cancelled_canvas _ _ =
 		Lwt.return [div [h1 [pcdata "Cancelled!"]]]
 
-	let error exc_list = fun _ _ ->
+	let error_canvas exc_list = fun _ _ ->
 		Lwt.return [div [h1 [pcdata "Error!"]]]
 	v}
 
@@ -86,7 +94,7 @@
 	and a "canvas" box which varies from page to page.
 
 	{v
-	let standard_handler sp canvas_tree =
+	let standard_handler ~page_title sp canvas_tree =
 		let tree = container
 				(source get_login)
 				[
@@ -97,7 +105,7 @@
 		in run_tree sp tree >>= fun page_body ->
 		Lwt.return
 			(html
-			(head (title (pcdata "")) [])
+			(head (title (pcdata page_title)) [])
 			(body page_body))
 	v}
 
@@ -114,10 +122,33 @@
 	v}
 
 	
-	We can at last create the various steps of the wizard.  Remember that because the level
-	of abstraction offered by {!Raw_steps} is still relatively close to the underlying [Eliom]
-	mechanisms, the steps must be declared in reverse order.  We therefore begin with the
-	last, created by function {!Raw_steps.make_last}:
+	We can at last create the various steps of the wizard.  Remember that the steps
+	must be declared in reverse order.  We therefore begin with the last, created by
+	function {!Raw_steps.make_last}.  As for the parameters to this function, here's
+	what you should know:
+
+	{ul
+		{li [fallback] is the customary [Eliom] fallback for expired services, etc.}
+		{li [tree_builder] is a function that constructs a page.  This function takes
+		two arguments: the usual [sp] server parameters, and a [canvas_tree] containing
+		the block that defines the canvas.}
+		{li [carrier] defines how the step's parameters should be given to the [form_contents]
+		function and eventually carried over to the next step.  Each step (except the first)
+		will typically have two sets of parameters: those carried over from the previous step,
+		and the steps specific to the current step.  The function specified by [carrier] takes
+		the two sets of parameters and should return the value to be passed on to the next step.
+		You can define your own carrier function, or use one of those provided by the {!Carriers}
+		module.}
+		{li [form_contents] is the function that produces the step's form.  In the case of the
+		last step, this name is actually a bit of a misnomer, since the "form" isn't really an
+		XHTML form element.  Note that [form_contents] receives the step's parameters as
+		transformed by the [carrier] function.}
+		{li [cancelled_canvas] is the special canvas that should be displayed (instead of
+		[form_contents]) should the user press the "Cancel" button.}
+		{li [error_canvas] is the special canvas that should be displayed (instead of
+		[form_contents]) should there be an error in the forms parameters.}
+		{li [params] are the step's specific parameters.  These should be specified in
+		the [Eliom_parameters] format.}}
 
 	{v
 	let step3 =
@@ -126,19 +157,21 @@
 			in [p [pcdata (Printf.sprintf "%d + %d = %d" a b (a + b))]]
 		in Litiom_wizard.Raw_steps.make_last
 			~fallback
-			~tree_builder: standard_handler
-			~cancel_canvas: (sink cancelled)
-			~error_canvas: (fun exc_list -> sink (error exc_list))
-			~params: (Eliom_parameters.int "b")
+			~tree_builder: (standard_handler ~page_title:"Step 3/3")
 			~carrier: Litiom_wizard.Carriers.carry_both
 			~form_contents: step3_contents
+			~cancelled_canvas: (sink cancelled_canvas)
+			~error_canvas: (fun exc_list -> sink (error_canvas exc_list))
+			~params: (Eliom_parameters.int "b")
 	v}
 
 
 	Since this example contains a total of only three steps, there is only one intermediate
 	(ie, neither initial nor final) step.  It must be created with the {!Raw_steps.make_middle}
 	function.  Should there have been more intermediate steps, all of them would likewise have
-	been created via this function.
+	been created via this function.  Note that the function's parameters are nearly identical
+	to those described for {!Raw_steps.make_last}, differing only in the addition of the
+	[next_step_register] parameter.
 
 	{v
 	let step2 =
@@ -152,13 +185,13 @@
 			]
 		in Litiom_wizard.Raw_steps.make_middle
 			~fallback
-			~tree_builder: standard_handler
-			~cancel_canvas: (sink cancelled)
-			~error_canvas: (fun exc_list -> sink (error exc_list))
-			~params: (Eliom_parameters.int "a")
+			~tree_builder: (standard_handler ~page_title:"Step 2/3")
 			~carrier: Litiom_wizard.Carriers.carry_both
 			~form_contents: step2_contents
 			~next_step_register: step3
+			~cancelled_canvas: (sink cancelled_canvas)
+			~error_canvas: (fun exc_list -> sink (error_canvas exc_list))
+			~params: (Eliom_parameters.int "a")
 	v}
 
 
@@ -178,7 +211,7 @@
 			]
 		in Litiom_wizard.Raw_steps.make_first
 			~fallback
-			~tree_builder: standard_handler
+			~tree_builder: (standard_handler ~page_title:"Step 1/3")
 			~carrier: Litiom_wizard.Carriers.carry_none
 			~form_contents:step1_contents
 			~next_step_register: step2
@@ -187,14 +220,14 @@
 
 
 (********************************************************************************)
-(**	{3 High-level interface}						*)
+(**	{3 Tutorial: high-level interface}					*)
 (********************************************************************************)
 
 (**	TO BE DONE.
 *)
 
 (********************************************************************************)
-(**	{2 Private submodules (to be removed from .mli)}			*)
+(**	{2 Private submodules (later to be removed from .mli)}			*)
 (********************************************************************************)
 
 module type SUBMIT =
@@ -296,7 +329,7 @@ module Handler :
     val inter :
       carrier:('a -> 'b -> 'c) ->
       next_step_register:(carry:'c -> 'd -> 'e) ->
-      cancel_canvas:('f, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_canvas:('f, Litiom_blocks.out_t) Litiom_blocks.t ->
       tree_builder:('d -> ('f, Litiom_blocks.out_t) Litiom_blocks.t -> 'g) ->
       canvas:(next_step:'e ->
               carry:'c ->
@@ -304,7 +337,7 @@ module Handler :
       carry:'a -> 'd -> unit -> 'b * Submit.t -> 'g
     val final :
       carrier:('a -> 'b -> 'c) ->
-      cancel_canvas:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_canvas:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
       tree_builder:('e -> ('d, Litiom_blocks.out_t) Litiom_blocks.t -> 'f) ->
       canvas:(carry:'c ->
               Litiom_blocks.sp_t -> 'd -> Litiom_blocks.out_t Lwt.t) ->
@@ -313,7 +346,7 @@ module Handler :
 module Error_handler :
   sig
     val inter :
-      cancel_canvas:'a ->
+      cancelled_canvas:'a ->
       error_canvas:('b -> 'a) ->
       tree_builder:(Eliom_sessions.server_params -> 'a -> 'c Lwt.t) ->
       Eliom_sessions.server_params -> 'b -> 'c Lwt.t
@@ -354,6 +387,15 @@ module Register :
 (********************************************************************************)
 (**	{2 Public submodules}							*)
 (********************************************************************************)
+
+module Carriers :
+  sig
+    val carry_both : 'a -> 'b -> 'a * 'b
+    val carry_previous : 'a -> 'b -> 'a
+    val carry_current : 'a -> 'b -> 'b
+    val carry_none : 'a -> 'b -> unit
+  end
+
 
 module Raw_steps :
   sig
@@ -399,7 +441,7 @@ module Raw_steps :
                            Eliom_parameters.param_name,
                            [< Eliom_services.registrable ])
                           Eliom_services.service) ->
-      cancel_canvas:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_canvas:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
       error_canvas:((string * exn) list ->
                     ('c, Litiom_blocks.out_t) Litiom_blocks.t) ->
       params:('e, [ `WithoutSuffix ], 'j) Eliom_parameters.params_type ->
@@ -477,7 +519,7 @@ module Raw_steps :
                       | `Ul
                       | `Var ]
                      XHTML.M.elt list) ->
-      cancel_canvas:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_canvas:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
       error_canvas:((string * exn) list ->
                     ('c, Litiom_blocks.out_t) Litiom_blocks.t) ->
       params:('e, [ `WithoutSuffix ], 'g) Eliom_parameters.params_type ->
@@ -490,10 +532,9 @@ module Raw_steps :
        [> `Registrable ])
       Eliom_services.service
   end
-module Carriers :
+
+
+module Standard :
   sig
-    val carry_both : 'a -> 'b -> 'a * 'b
-    val carry_previous : 'a -> 'b -> 'a
-    val carry_current : 'a -> 'b -> 'b
-    val carry_none : 'a -> 'b -> unit
   end
+

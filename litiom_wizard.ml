@@ -101,7 +101,7 @@ struct
 			let canvas_tree = Litiom_blocks.sink (canvas ~next_step ~carry)
 			in tree_builder sp canvas_tree
 
-	let inter ~carrier ~next_step_register ~cancel_canvas ~tree_builder ~canvas ~carry =
+	let inter ~carrier ~next_step_register ~cancelled_canvas ~tree_builder ~canvas ~carry =
 		fun sp () (this_params, submit_param) ->
 			let canvas_tree = match submit_param with
 				| Submit.Proceed ->
@@ -109,17 +109,17 @@ struct
 					let next_step = next_step_register ~carry sp
 					in Litiom_blocks.sink (canvas ~next_step ~carry)
 				| Submit.Cancel ->
-					cancel_canvas
+					cancelled_canvas
 			in tree_builder sp canvas_tree
 
-	let final ~carrier ~cancel_canvas ~tree_builder ~canvas ~carry =
+	let final ~carrier ~cancelled_canvas ~tree_builder ~canvas ~carry =
 		fun sp () (this_params, submit_param) ->
 			let canvas_tree = match submit_param with
 				| Submit.Proceed ->
 					let carry = carrier carry this_params
 					in Litiom_blocks.sink (canvas ~carry)
 				| Submit.Cancel ->
-					cancel_canvas
+					cancelled_canvas
 			in tree_builder sp canvas_tree
 
 	end
@@ -133,7 +133,7 @@ struct
 *)
 module Error_handler =
 struct
-	let inter ~cancel_canvas ~error_canvas ~tree_builder =
+	let inter ~cancelled_canvas ~error_canvas ~tree_builder =
 		fun sp exc_list ->
 			Eliom_sessions.get_post_params ~sp >>= fun params ->
 			let maybe_submit =
@@ -146,7 +146,7 @@ struct
 			let canvas_tree = match maybe_submit with
 				| None
 				| Some Submit.Proceed	-> error_canvas exc_list
-				| Some Submit.Cancel	-> cancel_canvas
+				| Some Submit.Cancel	-> cancelled_canvas
 			in tree_builder sp canvas_tree
 end
 
@@ -170,6 +170,44 @@ struct
 			~error_handler
 			(handler ~carry)
 
+end
+
+
+(********************************************************************************)
+(* Carriers module.								*)
+(********************************************************************************)
+
+(**	The [Carriers] module includes some simple predefined functions that encode
+	the typical actions that each step of a wizard can take concerning passing
+	its parameters to the subsequent step.
+*)
+module Carriers =
+struct
+	(**	This function will pass on to the next step a pair consisting of
+		the parameters accumulated from the previous step and the form
+		parameters given to the current step.
+	*)
+	let carry_both previous current = (previous, current)
+
+
+	(**	This function will pass on to the next step only the parameters
+		accumulated from the previous step, discarding the form parameters
+		given to the current step.
+	*)
+	let carry_previous previous current = previous
+
+
+	(**	This function will pass on to the next step only the form parameters
+		given to the current step, discarding the parameters accumulated
+		from the previous step.
+	*)
+	let carry_current previous current = current
+
+
+	(**	This function will discard all parameters, passing on to the next
+		step only a value of type unit.
+	*)
+	let carry_none previous current = ()
 end
 
 
@@ -222,7 +260,7 @@ struct
 		~carrier
 		~form_contents
 		~next_step_register
-		~cancel_canvas
+		~cancelled_canvas
 		~error_canvas
 		~params =
 
@@ -231,11 +269,11 @@ struct
 		let handler = Handler.inter
 				~carrier
 				~next_step_register
-				~cancel_canvas
+				~cancelled_canvas
 				~tree_builder
 				~canvas in
 		let error_handler = Error_handler.inter
-				~cancel_canvas
+				~cancelled_canvas
 				~error_canvas
 				~tree_builder in
 		let register = Register.inter
@@ -253,7 +291,7 @@ struct
 		~tree_builder
 		~carrier
 		~form_contents
-		~cancel_canvas
+		~cancelled_canvas
 		~error_canvas
 		~params =
 
@@ -261,11 +299,11 @@ struct
 				~form_contents in
 		let handler = Handler.final
 				~carrier
-				~cancel_canvas
+				~cancelled_canvas
 				~tree_builder
 				~canvas in
 		let error_handler = Error_handler.inter
-				~cancel_canvas
+				~cancelled_canvas
 				~error_canvas
 				~tree_builder in
 		let register = Register.inter
@@ -276,42 +314,14 @@ struct
 		in register
 end
 
-
 (********************************************************************************)
-(* Carriers module.								*)
+(* Standard module.								*)
 (********************************************************************************)
 
-(**	The [Carriers] module includes some simple predefined functions that encode
-	the typical actions that each step of a wizard can take concerning passing
-	its parameters to the subsequent step.
+(**	The Standard module provides a high-level interface to the construction
+	of wizards.
 *)
-module Carriers =
+module Standard =
 struct
-	(**	This function will pass on to the next step a pair consisting of
-		the parameters accumulated from the previous step and the form
-		parameters given to the current step.
-	*)
-	let carry_both previous current = (previous, current)
-
-
-	(**	This function will pass on to the next step only the parameters
-		accumulated from the previous step, discarding the form parameters
-		given to the current step.
-	*)
-	let carry_previous previous current = previous
-
-
-	(**	This function will pass on to the next step only the form parameters
-		given to the current step, discarding the parameters accumulated
-		from the previous step.
-	*)
-	let carry_current previous current = current
-
-
-	(**	This function will discard all parameters, passing on to the next
-		step only a value of type unit.
-	*)
-	let carry_none previous current = ()
 end
-
 
