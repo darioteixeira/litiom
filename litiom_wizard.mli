@@ -244,11 +244,10 @@ module type SUBMIT =
       [> `Fieldset ] XHTML.M.elt
   end
 module Submit : SUBMIT
-module Canvas :
+module Frame :
   sig
     val inter :
-      form_contents:(carry:'a ->
-                     'b -> Xhtmltypes.form_content XHTML.M.elt list) ->
+      contents:(carry:'a -> 'b -> Xhtmltypes.form_content XHTML.M.elt list) ->
       next_step:(unit, 'c, [< Eliom_services.post_service_kind ],
                  [< Eliom_services.suff ], 'd,
                  'b *
@@ -259,61 +258,61 @@ module Canvas :
       carry:'a ->
       Eliom_sessions.server_params -> 'e -> [> `Div ] XHTML.M.elt list Lwt.t
     val final :
-      form_contents:(carry:'a ->
-                     [< `A
-                      | `Abbr
-                      | `Acronym
-                      | `Address
-                      | `B
-                      | `Bdo
-                      | `Big
-                      | `Blockquote
-                      | `Br
-                      | `Button
-                      | `Cite
-                      | `Code
-                      | `Del
-                      | `Dfn
-                      | `Div
-                      | `Dl
-                      | `Em
-                      | `Fieldset
-                      | `Form
-                      | `H1
-                      | `H2
-                      | `H3
-                      | `H4
-                      | `H5
-                      | `H6
-                      | `Hr
-                      | `I
-                      | `Img
-                      | `Input
-                      | `Ins
-                      | `Kbd
-                      | `Label
-                      | `Map
-                      | `Noscript
-                      | `Object
-                      | `Ol
-                      | `P
-                      | `PCDATA
-                      | `Pre
-                      | `Q
-                      | `Samp
-                      | `Script
-                      | `Select
-                      | `Small
-                      | `Span
-                      | `Strong
-                      | `Sub
-                      | `Sup
-                      | `Table
-                      | `Textarea
-                      | `Tt
-                      | `Ul
-                      | `Var ]
-                     XHTML.M.elt list) ->
+      contents:(carry:'a ->
+                [< `A
+                 | `Abbr
+                 | `Acronym
+                 | `Address
+                 | `B
+                 | `Bdo
+                 | `Big
+                 | `Blockquote
+                 | `Br
+                 | `Button
+                 | `Cite
+                 | `Code
+                 | `Del
+                 | `Dfn
+                 | `Div
+                 | `Dl
+                 | `Em
+                 | `Fieldset
+                 | `Form
+                 | `H1
+                 | `H2
+                 | `H3
+                 | `H4
+                 | `H5
+                 | `H6
+                 | `Hr
+                 | `I
+                 | `Img
+                 | `Input
+                 | `Ins
+                 | `Kbd
+                 | `Label
+                 | `Map
+                 | `Noscript
+                 | `Object
+                 | `Ol
+                 | `P
+                 | `PCDATA
+                 | `Pre
+                 | `Q
+                 | `Samp
+                 | `Script
+                 | `Select
+                 | `Small
+                 | `Span
+                 | `Strong
+                 | `Sub
+                 | `Sup
+                 | `Table
+                 | `Textarea
+                 | `Tt
+                 | `Ul
+                 | `Var ]
+                XHTML.M.elt list) ->
       carry:'a -> 'b -> 'c -> [> `Div ] XHTML.M.elt list Lwt.t
   end
 module Handler :
@@ -322,32 +321,32 @@ module Handler :
       carrier:(unit -> unit -> 'a) ->
       next_step_register:(carry:'a -> 'b -> 'c) ->
       tree_builder:('b -> ('d, Litiom_blocks.out_t) Litiom_blocks.t -> 'e) ->
-      canvas:(next_step:'c ->
-              carry:'a ->
-              Litiom_blocks.sp_t -> 'd -> Litiom_blocks.out_t Lwt.t) ->
+      frame:(next_step:'c ->
+             carry:'a ->
+             Litiom_blocks.sp_t -> 'd -> Litiom_blocks.out_t Lwt.t) ->
       'b -> unit -> unit -> 'e
     val inter :
       carrier:('a -> 'b -> 'c) ->
       next_step_register:(carry:'c -> 'd -> 'e) ->
-      cancelled_canvas:('f, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_frame:('f, Litiom_blocks.out_t) Litiom_blocks.t ->
       tree_builder:('d -> ('f, Litiom_blocks.out_t) Litiom_blocks.t -> 'g) ->
-      canvas:(next_step:'e ->
-              carry:'c ->
-              Litiom_blocks.sp_t -> 'f -> Litiom_blocks.out_t Lwt.t) ->
+      frame:(next_step:'e ->
+             carry:'c ->
+             Litiom_blocks.sp_t -> 'f -> Litiom_blocks.out_t Lwt.t) ->
       carry:'a -> 'd -> unit -> 'b * Submit.t -> 'g
     val final :
       carrier:('a -> 'b -> 'c) ->
-      cancelled_canvas:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_frame:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
       tree_builder:('e -> ('d, Litiom_blocks.out_t) Litiom_blocks.t -> 'f) ->
-      canvas:(carry:'c ->
-              Litiom_blocks.sp_t -> 'd -> Litiom_blocks.out_t Lwt.t) ->
+      frame:(carry:'c ->
+             Litiom_blocks.sp_t -> 'd -> Litiom_blocks.out_t Lwt.t) ->
       carry:'a -> 'e -> unit -> 'b * Submit.t -> 'f
   end
 module Error_handler :
   sig
     val inter :
-      cancelled_canvas:'a ->
-      error_canvas:('b -> 'a) ->
+      cancelled_frame:'a ->
+      error_frame:('b -> 'a) ->
       tree_builder:(Eliom_sessions.server_params -> 'a -> 'c Lwt.t) ->
       Eliom_sessions.server_params -> 'b -> 'c Lwt.t
   end
@@ -395,8 +394,6 @@ module Carriers :
     val carry_current : 'a -> 'b -> 'b
     val carry_none : 'a -> 'b -> unit
   end
-
-
 module Raw_steps :
   sig
     val make_first :
@@ -407,8 +404,7 @@ module Raw_steps :
                     ('c, Litiom_blocks.out_t) Litiom_blocks.t ->
                     Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(unit -> unit -> 'd) ->
-      form_contents:(carry:'d ->
-                     'e -> Xhtmltypes.form_content XHTML.M.elt list) ->
+      contents:(carry:'d -> 'e -> Xhtmltypes.form_content XHTML.M.elt list) ->
       next_step_register:(carry:'d ->
                           Eliom_sessions.server_params ->
                           (unit, 'f, [< Eliom_services.post_service_kind ],
@@ -430,8 +426,7 @@ module Raw_steps :
                     ('c, Litiom_blocks.out_t) Litiom_blocks.t ->
                     Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:('d -> 'e -> 'f) ->
-      form_contents:(carry:'f ->
-                     'g -> Xhtmltypes.form_content XHTML.M.elt list) ->
+      contents:(carry:'f -> 'g -> Xhtmltypes.form_content XHTML.M.elt list) ->
       next_step_register:(carry:'f ->
                           Eliom_sessions.server_params ->
                           (unit, 'h, [< Eliom_services.post_service_kind ],
@@ -441,9 +436,9 @@ module Raw_steps :
                            Eliom_parameters.param_name,
                            [< Eliom_services.registrable ])
                           Eliom_services.service) ->
-      cancelled_canvas:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
-      error_canvas:((string * exn) list ->
-                    ('c, Litiom_blocks.out_t) Litiom_blocks.t) ->
+      cancelled_frame:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+      error_frame:((string * exn) list ->
+                   ('c, Litiom_blocks.out_t) Litiom_blocks.t) ->
       params:('e, [ `WithoutSuffix ], 'j) Eliom_parameters.params_type ->
       carry:'d ->
       Eliom_sessions.server_params ->
@@ -464,64 +459,64 @@ module Raw_steps :
                     ('c, Litiom_blocks.out_t) Litiom_blocks.t ->
                     Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:('d -> 'e -> 'f) ->
-      form_contents:(carry:'f ->
-                     [< `A
-                      | `Abbr
-                      | `Acronym
-                      | `Address
-                      | `B
-                      | `Bdo
-                      | `Big
-                      | `Blockquote
-                      | `Br
-                      | `Button
-                      | `Cite
-                      | `Code
-                      | `Del
-                      | `Dfn
-                      | `Div
-                      | `Dl
-                      | `Em
-                      | `Fieldset
-                      | `Form
-                      | `H1
-                      | `H2
-                      | `H3
-                      | `H4
-                      | `H5
-                      | `H6
-                      | `Hr
-                      | `I
-                      | `Img
-                      | `Input
-                      | `Ins
-                      | `Kbd
-                      | `Label
-                      | `Map
-                      | `Noscript
-                      | `Object
-                      | `Ol
-                      | `P
-                      | `PCDATA
-                      | `Pre
-                      | `Q
-                      | `Samp
-                      | `Script
-                      | `Select
-                      | `Small
-                      | `Span
-                      | `Strong
-                      | `Sub
-                      | `Sup
-                      | `Table
-                      | `Textarea
-                      | `Tt
-                      | `Ul
-                      | `Var ]
-                     XHTML.M.elt list) ->
-      cancelled_canvas:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
-      error_canvas:((string * exn) list ->
-                    ('c, Litiom_blocks.out_t) Litiom_blocks.t) ->
+      contents:(carry:'f ->
+                [< `A
+                 | `Abbr
+                 | `Acronym
+                 | `Address
+                 | `B
+                 | `Bdo
+                 | `Big
+                 | `Blockquote
+                 | `Br
+                 | `Button
+                 | `Cite
+                 | `Code
+                 | `Del
+                 | `Dfn
+                 | `Div
+                 | `Dl
+                 | `Em
+                 | `Fieldset
+                 | `Form
+                 | `H1
+                 | `H2
+                 | `H3
+                 | `H4
+                 | `H5
+                 | `H6
+                 | `Hr
+                 | `I
+                 | `Img
+                 | `Input
+                 | `Ins
+                 | `Kbd
+                 | `Label
+                 | `Map
+                 | `Noscript
+                 | `Object
+                 | `Ol
+                 | `P
+                 | `PCDATA
+                 | `Pre
+                 | `Q
+                 | `Samp
+                 | `Script
+                 | `Select
+                 | `Small
+                 | `Span
+                 | `Strong
+                 | `Sub
+                 | `Sup
+                 | `Table
+                 | `Textarea
+                 | `Tt
+                 | `Ul
+                 | `Var ]
+                XHTML.M.elt list) ->
+      cancelled_frame:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+      error_frame:((string * exn) list ->
+                   ('c, Litiom_blocks.out_t) Litiom_blocks.t) ->
       params:('e, [ `WithoutSuffix ], 'g) Eliom_parameters.params_type ->
       carry:'d ->
       Eliom_sessions.server_params ->
@@ -532,9 +527,4 @@ module Raw_steps :
        [> `Registrable ])
       Eliom_services.service
   end
-
-
-module Standard :
-  sig
-  end
-
+module Standard : sig  end

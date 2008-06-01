@@ -69,20 +69,20 @@ end
 
 
 (********************************************************************************)
-(* Canvas module.								*)
+(* Frame module.								*)
 (********************************************************************************)
 
-(**	The [Canvas] module will do this and that.
+(**	The [Frame] module will do this and that.
 *)
-module Canvas =
+module Frame =
 struct
-	let inter ~form_contents ~next_step ~carry sp x =
+	let inter ~contents ~next_step ~carry sp x =
 		let create_form (enter_next_params, enter_submit) =
-			(form_contents ~carry enter_next_params) @ [Submit.make_controls enter_submit]
+			(contents ~carry enter_next_params) @ [Submit.make_controls enter_submit]
 		in Lwt.return [div [Eliom_predefmod.Xhtml.post_form next_step sp create_form ()]]
 
-	let final ~form_contents ~carry sp x =
-		Lwt.return [div (form_contents ~carry)]
+	let final ~contents ~carry sp x =
+		Lwt.return [div (contents ~carry)]
 end
 
 
@@ -94,33 +94,33 @@ end
 *)
 module Handler =
 struct
-	let initial ~carrier ~next_step_register ~tree_builder ~canvas =
+	let initial ~carrier ~next_step_register ~tree_builder ~frame =
 		fun sp () () ->
 			let carry = carrier () () in
 			let next_step = next_step_register ~carry sp in
-			let canvas_tree = Litiom_blocks.sink (canvas ~next_step ~carry)
-			in tree_builder sp canvas_tree
+			let frame_tree = Litiom_blocks.sink (frame ~next_step ~carry)
+			in tree_builder sp frame_tree
 
-	let inter ~carrier ~next_step_register ~cancelled_canvas ~tree_builder ~canvas ~carry =
+	let inter ~carrier ~next_step_register ~cancelled_frame ~tree_builder ~frame ~carry =
 		fun sp () (this_params, submit_param) ->
-			let canvas_tree = match submit_param with
+			let frame_tree = match submit_param with
 				| Submit.Proceed ->
 					let carry = carrier carry this_params in
 					let next_step = next_step_register ~carry sp
-					in Litiom_blocks.sink (canvas ~next_step ~carry)
+					in Litiom_blocks.sink (frame ~next_step ~carry)
 				| Submit.Cancel ->
-					cancelled_canvas
-			in tree_builder sp canvas_tree
+					cancelled_frame
+			in tree_builder sp frame_tree
 
-	let final ~carrier ~cancelled_canvas ~tree_builder ~canvas ~carry =
+	let final ~carrier ~cancelled_frame ~tree_builder ~frame ~carry =
 		fun sp () (this_params, submit_param) ->
-			let canvas_tree = match submit_param with
+			let frame_tree = match submit_param with
 				| Submit.Proceed ->
 					let carry = carrier carry this_params
-					in Litiom_blocks.sink (canvas ~carry)
+					in Litiom_blocks.sink (frame ~carry)
 				| Submit.Cancel ->
-					cancelled_canvas
-			in tree_builder sp canvas_tree
+					cancelled_frame
+			in tree_builder sp frame_tree
 
 	end
 
@@ -133,7 +133,7 @@ struct
 *)
 module Error_handler =
 struct
-	let inter ~cancelled_canvas ~error_canvas ~tree_builder =
+	let inter ~cancelled_frame ~error_frame ~tree_builder =
 		fun sp exc_list ->
 			Eliom_sessions.get_post_params ~sp >>= fun params ->
 			let maybe_submit =
@@ -143,11 +143,11 @@ struct
 				with
 					| Not_found
 					| Invalid_argument _ -> None in
-			let canvas_tree = match maybe_submit with
+			let frame_tree = match maybe_submit with
 				| None
-				| Some Submit.Proceed	-> error_canvas exc_list
-				| Some Submit.Cancel	-> cancelled_canvas
-			in tree_builder sp canvas_tree
+				| Some Submit.Proceed	-> error_frame exc_list
+				| Some Submit.Cancel	-> cancelled_frame
+			in tree_builder sp frame_tree
 end
 
 
@@ -236,16 +236,16 @@ struct
 		~fallback
 		~tree_builder
 		~carrier
-		~form_contents
+		~contents
 		~next_step_register =
 
-		let canvas = Canvas.inter
-				~form_contents in
+		let frame = Frame.inter
+				~contents in
 		let handler = Handler.initial
 				~carrier
 				~next_step_register
 				~tree_builder
-				~canvas in
+				~frame in
 		let register = Register.initial
 				~fallback
 				~handler
@@ -258,23 +258,23 @@ struct
 		~fallback
 		~tree_builder
 		~carrier
-		~form_contents
+		~contents
 		~next_step_register
-		~cancelled_canvas
-		~error_canvas
+		~cancelled_frame
+		~error_frame
 		~params =
 
-		let canvas = Canvas.inter
-				~form_contents in
+		let frame = Frame.inter
+				~contents in
 		let handler = Handler.inter
 				~carrier
 				~next_step_register
-				~cancelled_canvas
+				~cancelled_frame
 				~tree_builder
-				~canvas in
+				~frame in
 		let error_handler = Error_handler.inter
-				~cancelled_canvas
-				~error_canvas
+				~cancelled_frame
+				~error_frame
 				~tree_builder in
 		let register = Register.inter
 				~fallback
@@ -290,21 +290,21 @@ struct
 		~fallback
 		~tree_builder
 		~carrier
-		~form_contents
-		~cancelled_canvas
-		~error_canvas
+		~contents
+		~cancelled_frame
+		~error_frame
 		~params =
 
-		let canvas = Canvas.final
-				~form_contents in
+		let frame = Frame.final
+				~contents in
 		let handler = Handler.final
 				~carrier
-				~cancelled_canvas
+				~cancelled_frame
 				~tree_builder
-				~canvas in
+				~frame in
 		let error_handler = Error_handler.inter
-				~cancelled_canvas
-				~error_canvas
+				~cancelled_frame
+				~error_frame
 				~tree_builder in
 		let register = Register.inter
 				~fallback
