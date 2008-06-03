@@ -212,10 +212,10 @@ end
 
 
 (********************************************************************************)
-(* Raw_steps module.								*)
+(* Steps module.								*)
 (********************************************************************************)
 
-(**	The {!Raw_steps} module provides a low-level interface to the construction
+(**	The {!Steps} module provides a low-level interface to the construction
 	of wizard-like interactions.  Wizard steps created via this module must be
 	declared in reversed sequential order; this is because the user is expected
 	to explicitly provide the next wizard step as a parameter.  Note that there
@@ -227,7 +227,7 @@ end
 	intimidating, they are actually fairly straightforward to use.  Check
 	the introduction for a small example.
 *)
-module Raw_steps =
+module Steps =
 struct
 
 	(**	Creates the first step of the wizard.
@@ -312,16 +312,5 @@ struct
 				~error_handler
 				~params
 		in register
-end
-
-(********************************************************************************)
-(* Standard module.								*)
-(********************************************************************************)
-
-(**	The Standard module provides a high-level interface to the construction
-	of wizards.
-*)
-module Standard =
-struct
 end
 

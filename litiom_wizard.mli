@@ -37,28 +37,24 @@
 	"Cancel" without filling a form, and of course, registering and invoking
 	each successive step in the wizard.
 
-	There are two sets of facilities offered by {!Litiom_wizard}, encapsulated
-	into two separate submodules.  The {!Raw_steps} submodule offers low-level
-	means of specifying the contents of the wizard, while the {!Standard}
-	submodule offers a simpler, higher-level (albeit less flexible) alternative.
-
-	This document continues with two tutorials, one for each of these two facilities.
-	Both tutorials are based on the same example: a three-step wizard that asks
-	for an integer [a] on the first step, another integer [b] on the second step,
-	and presents the result of [a+b] on the third and last step.
+	The above described facilities are offered by the {!Steps} submodule, and
+	this document continues with a tutorial explaining how that submodule should
+	be used.  The tutorial is based on a simple example: a three-step wizard
+	that asks for an integer [a] on the first step, another integer [b] on the
+	second step, and presents the result of [a+b] on the third and last step.
 *)
 
 
 (********************************************************************************)
-(**	{3 Tutorial: low-level interface}					*)
+(**	{3 Tutorial}								*)
 (********************************************************************************)
 
-(**	The {!Raw_steps} module provides a low-level interface to the construction
-	of a wizard.  By {i low-level}, it is meant that the user must declare
-	each wizard step explicitly and separately; moreover, the wizard steps
-	must be declared in reverse sequential order (a tell-tale sign that the
-	underlying [Eliom] mechanism is not made completely opaque to the user
-	of the module).
+(**	The {!Steps} module provides a moderately low-level interface to the
+	construction of a wizard.  By {i low-level}, it is meant that the user
+	must declare each wizard step explicitly and separately; moreover, the
+	wizard steps must be declared in reverse sequential order (a tell-tale
+	sign that the underlying [Eliom] mechanism is not rendered completely
+	opaque to the user of the module).
 
 	We begin by declaring the blocks that constitute the site.  {!Litiom_wizard}
 	relies on {!Litiom_blocks}, and therefore these blocks must be built to
@@ -66,7 +62,7 @@
 	is a source node that returns the currently logged in user (or suppose it
 	does; to simplify the example if just returns a random integer).  The two
 	blocks that follow, [header] and [footer] will appear in every page.  Finally,
-	the blocks [cancel_canvas] and [error_canvas] are the special blocks that
+	the blocks [cancelled_frame] and [error_frame] are the special blocks that
 	should be shown should the user cancel the wizard or an error situation occur,
 	respectively.  Note that with the exception of [get_login], all blocks are
 	are sinks, returning actual XHTML content:
@@ -81,25 +77,25 @@
 	let footer _ _ =
 		Lwt.return [div [h1 [pcdata "Footer"]]]
 
-	let cancelled_canvas _ _ =
+	let cancelled_frame _ _ =
 		Lwt.return [div [h1 [pcdata "Cancelled!"]]]
 
-	let error_canvas exc_list = fun _ _ ->
+	let error_frame exc_list = fun _ _ ->
 		Lwt.return [div [h1 [pcdata "Error!"]]]
 	v}
 
 
 	We then define the standard page builder, using the plumbing primitives from {!Litiom_blocks}.
 	Note that the every page is composed of three visible boxes: a constant header and footer,
-	and a "canvas" box which varies from page to page.
+	and a "frame" box which varies from page to page.
 
 	{v
-	let standard_handler ~page_title sp canvas_tree =
+	let standard_handler ~page_title sp frame_tree =
 		let tree = container
 				(source get_login)
 				[
 				sink header;
-				canvas_tree;
+				frame_tree;
 				sink footer
 				]
 		in run_tree sp tree >>= fun page_body ->
@@ -124,7 +120,7 @@
 	
 	We can at last create the various steps of the wizard.  Remember that the steps
 	must be declared in reverse order.  We therefore begin with the last, created by
-	function {!Raw_steps.make_last}.  As for the parameters to this function, here's
+	function {!Steps.make_last}.  As for the parameters to this function, here's
 	what you should know:
 
 	{ul
@@ -132,45 +128,45 @@
 		{li [tree_builder] is a function that constructs a page.  This function takes
 		two arguments: the usual [sp] server parameters, and a [canvas_tree] containing
 		the block that defines the canvas.}
-		{li [carrier] defines how the step's parameters should be given to the [form_contents]
+		{li [carrier] defines how the step's parameters should be given to the [contents]
 		function and eventually carried over to the next step.  Each step (except the first)
 		will typically have two sets of parameters: those carried over from the previous step,
 		and the steps specific to the current step.  The function specified by [carrier] takes
 		the two sets of parameters and should return the value to be passed on to the next step.
 		You can define your own carrier function, or use one of those provided by the {!Carriers}
 		module.}
-		{li [form_contents] is the function that produces the step's form.  In the case of the
-		last step, this name is actually a bit of a misnomer, since the "form" isn't really an
-		XHTML form element.  Note that [form_contents] receives the step's parameters as
-		transformed by the [carrier] function.}
-		{li [cancelled_canvas] is the special canvas that should be displayed (instead of
-		[form_contents]) should the user press the "Cancel" button.}
-		{li [error_canvas] is the special canvas that should be displayed (instead of
-		[form_contents]) should there be an error in the forms parameters.}
-		{li [params] are the step's specific parameters.  These should be specified in
-		the [Eliom_parameters] format.}}
+		{li [contents] is the function that produces the step's contents.  For all steps except
+		the last, the contents should be a form; as for the last step, the contents are simply
+		an XHTML element.  Note that [contents] receives the step's parameters as transformed
+		by the [carrier] function.}
+		{li [cancelled_frame] is the special frame that should be displayed (instead of [contents])
+		should the user press the "Cancel" button.}
+		{li [error_frame] is the special frame that should be displayed (instead of [contents])
+		should there be an error in the forms parameters.}
+		{li [params] are the step's specific parameters.  These should be specified in the
+		[Eliom_parameters] format.}}
 
 	{v
 	let step3 =
 		let step3_contents ~carry =
 			let (((), a), b) = carry
 			in [p [pcdata (Printf.sprintf "%d + %d = %d" a b (a + b))]]
-		in Litiom_wizard.Raw_steps.make_last
+		in Litiom_wizard.Steps.make_last
 			~fallback
 			~tree_builder: (standard_handler ~page_title:"Step 3/3")
 			~carrier: Litiom_wizard.Carriers.carry_both
-			~form_contents: step3_contents
-			~cancelled_canvas: (sink cancelled_canvas)
-			~error_canvas: (fun exc_list -> sink (error_canvas exc_list))
+			~contents: step3_contents
+			~cancelled_frame: (sink cancelled_frame)
+			~error_frame: (fun exc_list -> sink (error_frame exc_list))
 			~params: (Eliom_parameters.int "b")
 	v}
 
 
 	Since this example contains a total of only three steps, there is only one intermediate
-	(ie, neither initial nor final) step.  It must be created with the {!Raw_steps.make_middle}
+	(ie, neither initial nor final) step.  It must be created with the {!Steps.make_middle}
 	function.  Should there have been more intermediate steps, all of them would likewise have
 	been created via this function.  Note that the function's parameters are nearly identical
-	to those described for {!Raw_steps.make_last}, differing only in the addition of the
+	to those described for {!Steps.make_last}, differing only in the addition of the
 	[next_step_register] parameter.
 
 	{v
@@ -183,14 +179,14 @@
 				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_b"] ~input_type:`Text ~name:enter_b ();
 				]
 			]
-		in Litiom_wizard.Raw_steps.make_middle
+		in Litiom_wizard.Steps.make_middle
 			~fallback
 			~tree_builder: (standard_handler ~page_title:"Step 2/3")
 			~carrier: Litiom_wizard.Carriers.carry_both
-			~form_contents: step2_contents
+			~contents: step2_contents
 			~next_step_register: step3
-			~cancelled_canvas: (sink cancelled_canvas)
-			~error_canvas: (fun exc_list -> sink (error_canvas exc_list))
+			~cancelled_frame: (sink cancelled_frame)
+			~error_frame: (fun exc_list -> sink (error_frame exc_list))
 			~params: (Eliom_parameters.int "a")
 	v}
 
@@ -209,22 +205,15 @@
 				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_a"] ~input_type:`Text ~name:enter_a ();
 				]
 			]
-		in Litiom_wizard.Raw_steps.make_first
+		in Litiom_wizard.Steps.make_first
 			~fallback
 			~tree_builder: (standard_handler ~page_title:"Step 1/3")
 			~carrier: Litiom_wizard.Carriers.carry_none
-			~form_contents:step1_contents
+			~contents: step1_contents
 			~next_step_register: step2
 	v}
 *)
 
-
-(********************************************************************************)
-(**	{3 Tutorial: high-level interface}					*)
-(********************************************************************************)
-
-(**	TO BE DONE.
-*)
 
 (********************************************************************************)
 (**	{2 Private submodules (later to be removed from .mli)}			*)
@@ -394,7 +383,7 @@ module Carriers :
     val carry_current : 'a -> 'b -> 'b
     val carry_none : 'a -> 'b -> unit
   end
-module Raw_steps :
+module Steps :
   sig
     val make_first :
       fallback:(unit, unit, [< Eliom_services.internal_service_kind ],
@@ -527,4 +516,4 @@ module Raw_steps :
        [> `Registrable ])
       Eliom_services.service
   end
-module Standard : sig  end
+
