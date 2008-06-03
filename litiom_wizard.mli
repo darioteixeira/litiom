@@ -60,7 +60,7 @@
 	relies on {!Litiom_blocks}, and therefore these blocks must be built to
 	satisfy the requirements of the latter module.  The first block, [get_login]
 	is a source node that returns the currently logged in user (or suppose it
-	does; to simplify the example if just returns a random integer).  The two
+	does; to simplify the example if just returns a fixed integer).  The two
 	blocks that follow, [header] and [footer] will appear in every page.  Finally,
 	the blocks [cancelled_frame] and [error_frame] are the special blocks that
 	should be shown should the user cancel the wizard or an error situation occur,
@@ -69,13 +69,13 @@
 
 	{v
 	let get_login sp () =
-		Lwt.return (Random.int 10)
+		Lwt.return 10
 
 	let header _ _ =
-		Lwt.return [div [h1 [pcdata "Header"]]]
+		Lwt.return [div [h1 [pcdata "header"]]]
 
 	let footer _ _ =
-		Lwt.return [div [h1 [pcdata "Footer"]]]
+		Lwt.return [div [h1 [pcdata "footer"]]]
 
 	let cancelled_frame _ _ =
 		Lwt.return [div [h1 [pcdata "Cancelled!"]]]
@@ -85,13 +85,14 @@
 	v}
 
 
-	We then define the standard page builder, using the plumbing primitives from {!Litiom_blocks}.
-	Note that the every page is composed of three visible boxes: a constant header and footer,
-	and a "frame" box which varies from page to page.
+	We then define the standard page builder, using the plumbing primitives from
+	{!Litiom_blocks}.  Note that the every page is composed of three visible boxes:
+	a constant header and footer, and a "frame" box which varies from page to page.
 
 	{v
 	let standard_handler ~page_title sp frame_tree =
-		let tree = container
+		let tree =
+			container
 				(source get_login)
 				[
 				sink header;
@@ -101,13 +102,13 @@
 		in run_tree sp tree >>= fun page_body ->
 		Lwt.return
 			(html
-			(head (title (pcdata page_title)) [])
-			(body page_body))
+				(head (title (pcdata page_title)) [])
+				(body page_body))
 	v}
 
 
-	We must also declare the fallback for the wizard steps.  This fallback will be passed
-	to all the functions that create the wizard steps.
+	We must also declare the fallback for the wizard steps.  This fallback will be
+	passed to all the functions that create the wizard steps.
 
 	{v
 	let fallback =
@@ -126,8 +127,8 @@
 	{ul
 		{li [fallback] is the customary [Eliom] fallback for expired services, etc.}
 		{li [tree_builder] is a function that constructs a page.  This function takes
-		two arguments: the usual [sp] server parameters, and a [canvas_tree] containing
-		the block that defines the canvas.}
+		two arguments: the usual [sp] server parameters, and a [frame_tree] containing
+		the block that defines the frame.}
 		{li [carrier] defines how the step's parameters should be given to the [contents]
 		function and eventually carried over to the next step.  Each step (except the first)
 		will typically have two sets of parameters: those carried over from the previous step,
@@ -137,20 +138,29 @@
 		module.}
 		{li [contents] is the function that produces the step's contents.  For all steps except
 		the last, the contents should be a form; as for the last step, the contents are simply
-		an XHTML element.  Note that [contents] receives the step's parameters as transformed
-		by the [carrier] function.}
+		an XHTML element.  As for the parameters to the [contents] function itself, they are
+		as follows:
+		{ul
+			{li [sp] are the server parameters, as defined by [Eliom].}
+			{li [bp] are the block parameter, as commonly used with {!Litiom_blocks}.}
+			{li [gp] are the GET parameters of the service.}
+			{li [pp] are POST parameters of the service.}
+			{li [carry] is the result of the [carrier] function described above.}}}
 		{li [cancelled_frame] is the special frame that should be displayed (instead of [contents])
 		should the user press the "Cancel" button.}
 		{li [error_frame] is the special frame that should be displayed (instead of [contents])
 		should there be an error in the forms parameters.}
-		{li [params] are the step's specific parameters.  These should be specified in the
+		{li [params] are the step's specific (POST) parameters.  These should be specified in the
 		[Eliom_parameters] format.}}
 
 	{v
 	let step3 =
-		let step3_contents ~carry =
-			let (((), a), b) = carry
-			in [p [pcdata (Printf.sprintf "%d + %d = %d" a b (a + b))]]
+		let step3_contents ~sp ~bp ~gp ~pp ~carry =
+			let (a, b) = carry
+			in      [
+				p [pcdata (Printf.sprintf "%d + %d = %d" a b (a + b))];
+				p [pcdata (Printf.sprintf "Login = %d" bp)]
+				]
 		in Litiom_wizard.Steps.make_last
 			~fallback
 			~tree_builder: (standard_handler ~page_title:"Step 3/3")
@@ -171,7 +181,7 @@
 
 	{v
 	let step2 =
-		let step2_contents ~carry enter_b =
+		let step2_contents ~sp ~bp ~gp ~pp ~carry enter_b =
 			[
 			fieldset ~a:[a_class ["form_fields"]]
 				[
@@ -182,7 +192,7 @@
 		in Litiom_wizard.Steps.make_middle
 			~fallback
 			~tree_builder: (standard_handler ~page_title:"Step 2/3")
-			~carrier: Litiom_wizard.Carriers.carry_both
+			~carrier: Litiom_wizard.Carriers.carry_current
 			~contents: step2_contents
 			~next_step_register: step3
 			~cancelled_frame: (sink cancelled_frame)
@@ -191,13 +201,13 @@
 	v}
 
 
-	Finally, we create the first step of the wizard.  Note that the first step does not take
-	any POST parameters, and does not require the provision of special canvases for error and
-	cancellation situations.
+	Finally, we create the first step of the wizard.  Note that the first step
+	does not take any POST parameters, and does not require the provision of
+	special frames for error and cancellation situations.
 
 	{v
 	let step1 =
-		let step1_contents ~carry enter_a =
+		let step1_contents ~sp ~bp ~gp ~pp ~carry enter_a =
 			[
 			fieldset ~a:[a_class ["form_fields"]]
 				[
@@ -212,7 +222,7 @@
 			~contents: step1_contents
 			~next_step_register: step2
 	v}
-*)
+	*)
 
 
 (********************************************************************************)
@@ -236,18 +246,28 @@ module Submit : SUBMIT
 module Frame :
   sig
     val inter :
-      contents:(carry:'a -> 'b -> Xhtmltypes.form_content XHTML.M.elt list) ->
-      next_step:(unit, 'c, [< Eliom_services.post_service_kind ],
-                 [< Eliom_services.suff ], 'd,
-                 'b *
+      contents:(sp:Eliom_sessions.server_params ->
+                bp:'a ->
+                gp:'b ->
+                pp:'c ->
+                carry:'d -> 'e -> Xhtmltypes.form_content XHTML.M.elt list) ->
+      next_step:('b, 'f, [< Eliom_services.post_service_kind ],
+                 [< Eliom_services.suff ], 'g,
+                 'e *
                  [< Submit.t Eliom_parameters.setoneopt ]
                  Eliom_parameters.param_name,
                  [< Eliom_services.registrable ])
                 Eliom_services.service ->
-      carry:'a ->
-      Eliom_sessions.server_params -> 'e -> [> `Div ] XHTML.M.elt list Lwt.t
+      gp:'b ->
+      pp:'c ->
+      carry:'d ->
+      Eliom_sessions.server_params -> 'a -> [> `Div ] XHTML.M.elt list Lwt.t
     val final :
-      contents:(carry:'a ->
+      contents:(sp:'a ->
+                bp:'b ->
+                gp:'c ->
+                pp:'d ->
+                carry:'e ->
                 [< `A
                  | `Abbr
                  | `Acronym
@@ -302,7 +322,8 @@ module Frame :
                  | `Ul
                  | `Var ]
                 XHTML.M.elt list) ->
-      carry:'a -> 'b -> 'c -> [> `Div ] XHTML.M.elt list Lwt.t
+      gp:'c ->
+      pp:'d -> carry:'e -> 'a -> 'b -> [> `Div ] XHTML.M.elt list Lwt.t
   end
 module Handler :
   sig
@@ -311,25 +332,31 @@ module Handler :
       next_step_register:(carry:'a -> 'b -> 'c) ->
       tree_builder:('b -> ('d, Litiom_blocks.out_t) Litiom_blocks.t -> 'e) ->
       frame:(next_step:'c ->
+             gp:'f ->
+             pp:unit ->
              carry:'a ->
              Litiom_blocks.sp_t -> 'd -> Litiom_blocks.out_t Lwt.t) ->
-      'b -> unit -> unit -> 'e
+      'b -> 'f -> unit -> 'e
     val inter :
       carrier:('a -> 'b -> 'c) ->
       next_step_register:(carry:'c -> 'd -> 'e) ->
       cancelled_frame:('f, Litiom_blocks.out_t) Litiom_blocks.t ->
       tree_builder:('d -> ('f, Litiom_blocks.out_t) Litiom_blocks.t -> 'g) ->
       frame:(next_step:'e ->
+             gp:'h ->
+             pp:'b ->
              carry:'c ->
              Litiom_blocks.sp_t -> 'f -> Litiom_blocks.out_t Lwt.t) ->
-      carry:'a -> 'd -> unit -> 'b * Submit.t -> 'g
+      carry:'a -> 'd -> 'h -> 'b * Submit.t -> 'g
     val final :
       carrier:('a -> 'b -> 'c) ->
       cancelled_frame:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
       tree_builder:('e -> ('d, Litiom_blocks.out_t) Litiom_blocks.t -> 'f) ->
-      frame:(carry:'c ->
+      frame:(gp:'g ->
+             pp:'b ->
+             carry:'c ->
              Litiom_blocks.sp_t -> 'd -> Litiom_blocks.out_t Lwt.t) ->
-      carry:'a -> 'e -> unit -> 'b * Submit.t -> 'f
+      carry:'a -> 'e -> 'g -> 'b * Submit.t -> 'f
   end
 module Error_handler :
   sig
@@ -386,69 +413,81 @@ module Carriers :
 module Steps :
   sig
     val make_first :
-      fallback:(unit, unit, [< Eliom_services.internal_service_kind ],
-                [< Eliom_services.suff ], 'a, 'b, [ `Registrable ])
+      fallback:('a, unit, [< Eliom_services.internal_service_kind ],
+                [< Eliom_services.suff ], 'b, 'c, [ `Registrable ])
                Eliom_services.service ->
       tree_builder:(Eliom_sessions.server_params ->
-                    ('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+                    ('d, Litiom_blocks.out_t) Litiom_blocks.t ->
                     Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(unit -> unit -> 'd) ->
-      contents:(carry:'d -> 'e -> Xhtmltypes.form_content XHTML.M.elt list) ->
-      next_step_register:(carry:'d ->
+      carrier:(unit -> unit -> 'e) ->
+      contents:(sp:Litiom_blocks.sp_t ->
+                bp:'d ->
+                gp:'a ->
+                pp:unit ->
+                carry:'e -> 'f -> Xhtmltypes.form_content XHTML.M.elt list) ->
+      next_step_register:(carry:'e ->
                           Eliom_sessions.server_params ->
-                          (unit, 'f, [< Eliom_services.post_service_kind ],
-                           [< Eliom_services.suff ], 'g,
-                           'e *
+                          ('a, 'g, [< Eliom_services.post_service_kind ],
+                           [< Eliom_services.suff ], 'h,
+                           'f *
                            [< Submit.t Eliom_parameters.setoneopt ]
                            Eliom_parameters.param_name,
                            [< Eliom_services.registrable ])
                           Eliom_services.service) ->
       unit
     val make_middle :
-      fallback:(unit, unit,
+      fallback:('a, unit,
                 [ `Attached of
                     [ `Internal of [< `Coservice | `Service ] * [ `Get ] ]
                     Eliom_services.a_s ],
-                [< Eliom_services.suff ] as 'a, 'b, unit, [ `Registrable ])
+                [< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
                Eliom_services.service ->
       tree_builder:(Eliom_sessions.server_params ->
-                    ('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+                    ('d, Litiom_blocks.out_t) Litiom_blocks.t ->
                     Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:('d -> 'e -> 'f) ->
-      contents:(carry:'f -> 'g -> Xhtmltypes.form_content XHTML.M.elt list) ->
-      next_step_register:(carry:'f ->
+      carrier:('e -> 'f -> 'g) ->
+      contents:(sp:Litiom_blocks.sp_t ->
+                bp:'d ->
+                gp:'a ->
+                pp:'f ->
+                carry:'g -> 'h -> Xhtmltypes.form_content XHTML.M.elt list) ->
+      next_step_register:(carry:'g ->
                           Eliom_sessions.server_params ->
-                          (unit, 'h, [< Eliom_services.post_service_kind ],
-                           [< Eliom_services.suff ], 'i,
-                           'g *
+                          ('a, 'i, [< Eliom_services.post_service_kind ],
+                           [< Eliom_services.suff ], 'j,
+                           'h *
                            [< Submit.t Eliom_parameters.setoneopt ]
                            Eliom_parameters.param_name,
                            [< Eliom_services.registrable ])
                           Eliom_services.service) ->
-      cancelled_frame:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_frame:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
       error_frame:((string * exn) list ->
-                   ('c, Litiom_blocks.out_t) Litiom_blocks.t) ->
-      params:('e, [ `WithoutSuffix ], 'j) Eliom_parameters.params_type ->
-      carry:'d ->
+                   ('d, Litiom_blocks.out_t) Litiom_blocks.t) ->
+      params:('f, [ `WithoutSuffix ], 'k) Eliom_parameters.params_type ->
+      carry:'e ->
       Eliom_sessions.server_params ->
-      (unit, 'e * Submit.t,
+      ('a, 'f * Submit.t,
        [> `Attached of
             [> `Internal of [> `Coservice ] * [> `Post ] ] Eliom_services.a_s ],
-       'a, 'b, 'j * [ `One of Submit.t ] Eliom_parameters.param_name,
+       'b, 'c, 'k * [ `One of Submit.t ] Eliom_parameters.param_name,
        [> `Registrable ])
       Eliom_services.service
     val make_last :
-      fallback:(unit, unit,
+      fallback:('a, unit,
                 [ `Attached of
                     [ `Internal of [< `Coservice | `Service ] * [ `Get ] ]
                     Eliom_services.a_s ],
-                [< Eliom_services.suff ] as 'a, 'b, unit, [ `Registrable ])
+                [< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
                Eliom_services.service ->
       tree_builder:(Eliom_sessions.server_params ->
-                    ('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+                    ('d, Litiom_blocks.out_t) Litiom_blocks.t ->
                     Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:('d -> 'e -> 'f) ->
-      contents:(carry:'f ->
+      carrier:('e -> 'f -> 'g) ->
+      contents:(sp:Litiom_blocks.sp_t ->
+                bp:'d ->
+                gp:'a ->
+                pp:'f ->
+                carry:'g ->
                 [< `A
                  | `Abbr
                  | `Acronym
@@ -503,17 +542,16 @@ module Steps :
                  | `Ul
                  | `Var ]
                 XHTML.M.elt list) ->
-      cancelled_frame:('c, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_frame:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
       error_frame:((string * exn) list ->
-                   ('c, Litiom_blocks.out_t) Litiom_blocks.t) ->
-      params:('e, [ `WithoutSuffix ], 'g) Eliom_parameters.params_type ->
-      carry:'d ->
+                   ('d, Litiom_blocks.out_t) Litiom_blocks.t) ->
+      params:('f, [ `WithoutSuffix ], 'h) Eliom_parameters.params_type ->
+      carry:'e ->
       Eliom_sessions.server_params ->
-      (unit, 'e * Submit.t,
+      ('a, 'f * Submit.t,
        [> `Attached of
             [> `Internal of [> `Coservice ] * [> `Post ] ] Eliom_services.a_s ],
-       'a, 'b, 'g * [ `One of Submit.t ] Eliom_parameters.param_name,
+       'b, 'c, 'h * [ `One of Submit.t ] Eliom_parameters.param_name,
        [> `Registrable ])
       Eliom_services.service
   end
-

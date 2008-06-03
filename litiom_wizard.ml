@@ -76,13 +76,13 @@ end
 *)
 module Frame =
 struct
-	let inter ~contents ~next_step ~carry sp x =
+	let inter ~contents ~next_step ~gp ~pp ~carry sp bp =
 		let create_form (enter_next_params, enter_submit) =
-			(contents ~carry enter_next_params) @ [Submit.make_controls enter_submit]
-		in Lwt.return [div [Eliom_predefmod.Xhtml.post_form next_step sp create_form ()]]
+			(contents ~sp ~bp ~gp ~pp ~carry enter_next_params) @ [Submit.make_controls enter_submit]
+		in Lwt.return [div [Eliom_predefmod.Xhtml.post_form next_step sp create_form gp]]
 
-	let final ~contents ~carry sp x =
-		Lwt.return [div (contents ~carry)]
+	let final ~contents ~gp ~pp ~carry sp bp =
+		Lwt.return [div (contents ~sp ~bp ~gp ~pp ~carry)]
 end
 
 
@@ -95,29 +95,29 @@ end
 module Handler =
 struct
 	let initial ~carrier ~next_step_register ~tree_builder ~frame =
-		fun sp () () ->
+		fun sp gp () ->
 			let carry = carrier () () in
 			let next_step = next_step_register ~carry sp in
-			let frame_tree = Litiom_blocks.sink (frame ~next_step ~carry)
+			let frame_tree = Litiom_blocks.sink (frame ~next_step ~gp ~pp:() ~carry)
 			in tree_builder sp frame_tree
 
 	let inter ~carrier ~next_step_register ~cancelled_frame ~tree_builder ~frame ~carry =
-		fun sp () (this_params, submit_param) ->
+		fun sp gp (pp, submit_param) ->
 			let frame_tree = match submit_param with
 				| Submit.Proceed ->
-					let carry = carrier carry this_params in
+					let carry = carrier carry pp in
 					let next_step = next_step_register ~carry sp
-					in Litiom_blocks.sink (frame ~next_step ~carry)
+					in Litiom_blocks.sink (frame ~next_step ~gp ~pp ~carry)
 				| Submit.Cancel ->
 					cancelled_frame
 			in tree_builder sp frame_tree
 
 	let final ~carrier ~cancelled_frame ~tree_builder ~frame ~carry =
-		fun sp () (this_params, submit_param) ->
+		fun sp gp (pp, submit_param) ->
 			let frame_tree = match submit_param with
 				| Submit.Proceed ->
-					let carry = carrier carry this_params
-					in Litiom_blocks.sink (frame ~carry)
+					let carry = carrier carry pp
+					in Litiom_blocks.sink (frame ~gp ~pp ~carry)
 				| Submit.Cancel ->
 					cancelled_frame
 			in tree_builder sp frame_tree
