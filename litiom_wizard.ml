@@ -69,20 +69,24 @@ end
 
 
 (********************************************************************************)
-(* Frame module.								*)
+(* Content module.								*)
 (********************************************************************************)
 
-(**	The [Frame] module will do this and that.
+(**	The [Content] module will do this and that.
 *)
-module Frame =
+module Content =
 struct
-	let inter ~contents ~next_step ~gp ~pp ~carry sp bp =
-		let create_form (enter_next_params, enter_submit) =
-			(contents ~sp ~bp ~gp ~pp ~carry enter_next_params) @ [Submit.make_controls enter_submit]
-		in Lwt.return [div [Eliom_predefmod.Xhtml.post_form next_step sp create_form gp]]
+	let inter ~content_maker ~next_step ~gp ~pp ~carry sp bp =
+		let create_form () =
+			content_maker ~sp ~bp ~gp ~pp ~carry enter_next_params >>= fun form_contents ->
+			Lwt.return
+				(fun (enter_next_params, enter_submit) ->
+					Lwt.return (form_contents @ [Submit.make_controls enter_submit]))
+		in create_form () >>= fun created_form ->
+		Lwt.return [div [Eliom_predefmod.Xhtml.post_form next_step sp created_form gp]]
 
-	let final ~contents ~gp ~pp ~carry sp bp =
-		Lwt.return [div (contents ~sp ~bp ~gp ~pp ~carry)]
+	let final ~content_maker ~gp ~pp ~carry sp bp =
+		Lwt.return [div (content_maker ~sp ~bp ~gp ~pp ~carry ())]
 end
 
 
@@ -94,14 +98,14 @@ end
 *)
 module Handler =
 struct
-	let initial ~carrier ~next_step_register ~tree_builder ~frame =
+	let initial ~carrier ~next_step_register ~tree_builder ~content =
 		fun sp gp () ->
 			let carry = carrier () () in
 			let next_step = next_step_register ~carry sp in
-			let frame_tree = Litiom_blocks.sink (frame ~next_step ~gp ~pp:() ~carry)
+			let content_tree = Litiom_blocks.sink (content ~next_step ~gp ~pp ~carry)
 			in tree_builder sp frame_tree
 
-	let inter ~carrier ~next_step_register ~cancelled_frame ~tree_builder ~frame ~carry =
+	let inter ~carrier ~next_step_register ~cancelled_canvas ~tree_builder ~frame ~carry =
 		fun sp gp (pp, submit_param) ->
 			let frame_tree = match submit_param with
 				| Submit.Proceed ->
@@ -109,17 +113,17 @@ struct
 					let next_step = next_step_register ~carry sp
 					in Litiom_blocks.sink (frame ~next_step ~gp ~pp ~carry)
 				| Submit.Cancel ->
-					cancelled_frame
+					cancelled_canvas
 			in tree_builder sp frame_tree
 
-	let final ~carrier ~cancelled_frame ~tree_builder ~frame ~carry =
+	let final ~carrier ~cancelled_canvas ~tree_builder ~frame ~carry =
 		fun sp gp (pp, submit_param) ->
 			let frame_tree = match submit_param with
 				| Submit.Proceed ->
 					let carry = carrier carry pp
 					in Litiom_blocks.sink (frame ~gp ~pp ~carry)
 				| Submit.Cancel ->
-					cancelled_frame
+					cancelled_canvas
 			in tree_builder sp frame_tree
 
 	end
@@ -133,7 +137,7 @@ struct
 *)
 module Error_handler =
 struct
-	let inter ~cancelled_frame ~error_frame ~tree_builder =
+	let inter ~cancelled_canvas ~error_frame ~tree_builder =
 		fun sp exc_list ->
 			Eliom_sessions.get_post_params ~sp >>= fun params ->
 			let maybe_submit =
@@ -146,7 +150,7 @@ struct
 			let frame_tree = match maybe_submit with
 				| None
 				| Some Submit.Proceed	-> error_frame exc_list
-				| Some Submit.Cancel	-> cancelled_frame
+				| Some Submit.Cancel	-> cancelled_canvas
 			in tree_builder sp frame_tree
 end
 
@@ -172,145 +176,87 @@ struct
 
 end
 
-
 (********************************************************************************)
-(* Carriers module.								*)
+(* Top-level public functions.							*)
 (********************************************************************************)
 
-(**	The [Carriers] module includes some simple predefined functions that encode
-	the typical actions that each step of a wizard can take concerning passing
-	its parameters to the subsequent step.
+
+(**	Creates the first step of the wizard.
 *)
-module Carriers =
-struct
-	(**	This function will pass on to the next step a pair consisting of
-		the parameters accumulated from the previous step and the form
-		parameters given to the current step.
-	*)
-	let carry_both previous current = (previous, current)
+let make_first
+	~fallback
+	~tree_builder
+	~content_maker
+	~next_step_register
+	~params
+
+	let content = Content.inter
+			~content_maker in
+	let handler = Handler.initial
+			~next_step_register
+			~tree_builder
+			~content in
+	let register = Register.initial
+			~fallback
+			~handler
+			~params
+	in register
 
 
-	(**	This function will pass on to the next step only the parameters
-		accumulated from the previous step, discarding the form parameters
-		given to the current step.
-	*)
-	let carry_previous previous current = previous
-
-
-	(**	This function will pass on to the next step only the form parameters
-		given to the current step, discarding the parameters accumulated
-		from the previous step.
-	*)
-	let carry_current previous current = current
-
-
-	(**	This function will discard all parameters, passing on to the next
-		step only a value of type unit.
-	*)
-	let carry_none previous current = ()
-end
-
-
-(********************************************************************************)
-(* Steps module.								*)
-(********************************************************************************)
-
-(**	The {!Steps} module provides a low-level interface to the construction
-	of wizard-like interactions.  Wizard steps created via this module must be
-	declared in reversed sequential order; this is because the user is expected
-	to explicitly provide the next wizard step as a parameter.  Note that there
-	are special functions to create the first and last steps of the wizard
-	({!make_first} and {!make_last}, respectively).  All other steps must be
-	created with {!make_middle}.
-
-	At last, note that even though this module's function signatures look
-	intimidating, they are actually fairly straightforward to use.  Check
-	the introduction for a small example.
+(**	Creates a wizard's intermediate step (ie, a step which is neither the first nor the last).
 *)
-module Steps =
-struct
+let make_middle
+	~fallback
+	~tree_builder
+	~content_maker
+	~next_step_register
+	~cancelled_canvas_tree
+	~error_canvas_tree
+	~params =
 
-	(**	Creates the first step of the wizard.
-	*)
-	let make_first
-		~fallback
-		~tree_builder
-		~carrier
-		~contents
-		~next_step_register =
-
-		let frame = Frame.inter
-				~contents in
-		let handler = Handler.initial
-				~carrier
-				~next_step_register
-				~tree_builder
-				~frame in
-		let register = Register.initial
-				~fallback
-				~handler
-		in register
-
-
-	(**	Creates a wizard's intermediate step (ie, a step which is neither the first nor the last).
-	*)
-	let make_middle
-		~fallback
-		~tree_builder
-		~carrier
-		~contents
-		~next_step_register
-		~cancelled_frame
-		~error_frame
-		~params =
-
-		let frame = Frame.inter
-				~contents in
-		let handler = Handler.inter
-				~carrier
-				~next_step_register
-				~cancelled_frame
-				~tree_builder
-				~frame in
-		let error_handler = Error_handler.inter
-				~cancelled_frame
-				~error_frame
-				~tree_builder in
-		let register = Register.inter
-				~fallback
-				~handler
-				~error_handler
-				~params
-		in register
+	let content = Frame.inter
+			~content_maker in
+	let handler = Handler.inter
+			~next_step
+			~cancelled_canvas
+			~tree_builder
+			~frame in
+	let error_handler = Error_handler.inter
+			~cancelled_canvas
+			~error_frame
+			~tree_builder in
+	let register = Register.inter
+			~fallback
+			~handler
+			~error_handler
+			~params
+	in register
 
 
-	(**	Creates the last step of the wizard.
-	*)
-	let make_last
-		~fallback
-		~tree_builder
-		~carrier
-		~contents
-		~cancelled_frame
-		~error_frame
-		~params =
+(**	Creates the last step of the wizard.
+*)
+let make_last
+	~fallback
+	~tree_builder
+	~content_maker
+	~cancelled_canvas
+	~error_frame
+	~params =
 
-		let frame = Frame.final
-				~contents in
-		let handler = Handler.final
-				~carrier
-				~cancelled_frame
-				~tree_builder
-				~frame in
-		let error_handler = Error_handler.inter
-				~cancelled_frame
-				~error_frame
-				~tree_builder in
-		let register = Register.inter
-				~fallback
-				~handler
-				~error_handler
-				~params
-		in register
-end
+	let frame = Frame.final
+			~content_maker in
+	let handler = Handler.final
+			~cancelled_canvas
+			~tree_builder
+			~frame in
+	let error_handler = Error_handler.inter
+			~cancelled_canvas
+			~error_frame
+			~tree_builder in
+	let register = Register.inter
+			~fallback
+			~handler
+			~error_handler
+			~params
+	in register
 

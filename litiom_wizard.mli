@@ -62,7 +62,7 @@
 	is a source node that returns the currently logged in user (or suppose it
 	does; to simplify the example if just returns a fixed integer).  The two
 	blocks that follow, [header] and [footer] will appear in every page.  Finally,
-	the blocks [cancelled_frame] and [error_frame] are the special blocks that
+	the blocks [cancelled_canvas] and [error_frame] are the special blocks that
 	should be shown should the user cancel the wizard or an error situation occur,
 	respectively.  Note that with the exception of [get_login], all blocks are
 	are sinks, returning actual XHTML content:
@@ -77,7 +77,7 @@
 	let footer _ _ =
 		Lwt.return [div [h1 [pcdata "footer"]]]
 
-	let cancelled_frame _ _ =
+	let cancelled_canvas _ _ =
 		Lwt.return [div [h1 [pcdata "Cancelled!"]]]
 
 	let error_frame exc_list = fun _ _ ->
@@ -146,7 +146,7 @@
 			{li [gp] are the GET parameters of the service.}
 			{li [pp] are POST parameters of the service.}
 			{li [carry] is the result of the [carrier] function described above.}}}
-		{li [cancelled_frame] is the special frame that should be displayed (instead of [contents])
+		{li [cancelled_canvas] is the special frame that should be displayed (instead of [contents])
 		should the user press the "Cancel" button.}
 		{li [error_frame] is the special frame that should be displayed (instead of [contents])
 		should there be an error in the forms parameters.}
@@ -166,7 +166,7 @@
 			~tree_builder: (standard_handler ~page_title:"Step 3/3")
 			~carrier: Litiom_wizard.Carriers.carry_both
 			~contents: step3_contents
-			~cancelled_frame: (sink cancelled_frame)
+			~cancelled_canvas: (sink cancelled_canvas)
 			~error_frame: (fun exc_list -> sink (error_frame exc_list))
 			~params: (Eliom_parameters.int "b")
 	v}
@@ -195,7 +195,7 @@
 			~carrier: Litiom_wizard.Carriers.carry_current
 			~contents: step2_contents
 			~next_step_register: step3
-			~cancelled_frame: (sink cancelled_frame)
+			~cancelled_canvas: (sink cancelled_canvas)
 			~error_frame: (fun exc_list -> sink (error_frame exc_list))
 			~params: (Eliom_parameters.int "a")
 	v}
@@ -340,7 +340,7 @@ module Handler :
     val inter :
       carrier:('a -> 'b -> 'c) ->
       next_step_register:(carry:'c -> 'd -> 'e) ->
-      cancelled_frame:('f, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_canvas:('f, Litiom_blocks.out_t) Litiom_blocks.t ->
       tree_builder:('d -> ('f, Litiom_blocks.out_t) Litiom_blocks.t -> 'g) ->
       frame:(next_step:'e ->
              gp:'h ->
@@ -350,7 +350,7 @@ module Handler :
       carry:'a -> 'd -> 'h -> 'b * Submit.t -> 'g
     val final :
       carrier:('a -> 'b -> 'c) ->
-      cancelled_frame:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_canvas:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
       tree_builder:('e -> ('d, Litiom_blocks.out_t) Litiom_blocks.t -> 'f) ->
       frame:(gp:'g ->
              pp:'b ->
@@ -361,7 +361,7 @@ module Handler :
 module Error_handler :
   sig
     val inter :
-      cancelled_frame:'a ->
+      cancelled_canvas:'a ->
       error_frame:('b -> 'a) ->
       tree_builder:(Eliom_sessions.server_params -> 'a -> 'c Lwt.t) ->
       Eliom_sessions.server_params -> 'b -> 'c Lwt.t
@@ -460,7 +460,7 @@ module Steps :
                            Eliom_parameters.param_name,
                            [< Eliom_services.registrable ])
                           Eliom_services.service) ->
-      cancelled_frame:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_canvas:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
       error_frame:((string * exn) list ->
                    ('d, Litiom_blocks.out_t) Litiom_blocks.t) ->
       params:('f, [ `WithoutSuffix ], 'k) Eliom_parameters.params_type ->
@@ -542,7 +542,7 @@ module Steps :
                  | `Ul
                  | `Var ]
                 XHTML.M.elt list) ->
-      cancelled_frame:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
+      cancelled_canvas:('d, Litiom_blocks.out_t) Litiom_blocks.t ->
       error_frame:((string * exn) list ->
                    ('d, Litiom_blocks.out_t) Litiom_blocks.t) ->
       params:('f, [ `WithoutSuffix ], 'h) Eliom_parameters.params_type ->
