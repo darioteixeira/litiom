@@ -1,23 +1,39 @@
-OCAMLBUILS_OPTS:=-classic-display
+#
+# Configuration options
+#
+
+PKG_NAME=litiom
+
+SRC_DIR=src
+
+LIB_BUILD_DIR=$(SRC_DIR)/_build
+LIB_TARGETS=litiom.cma litiom.cmxa litiom.a litiom_blocks.cmi litiom_wizard.cmi
+LIB_FQTARGETS=$(foreach TARGET, $(LIB_TARGETS), $(LIB_BUILD_DIR)/$(TARGET))
+
+OCAMLBUILS_OPTS=
+
+#
+# Rule
+#
 
 all: lib
 
 lib:
-	ocamlbuild $(OCAMLBUILS_OPTS) litiom.cma
+	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILS_OPTS) $(LIB_TARGETS)
 
+apidoc: lib
+	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILD_OPTS) lambdoc.docdir/index.html
 
 install: lib
-	ocamlfind remove litiom
-	ocamlfind install litiom META _build/litiom.cma _build/litiom_blocks.cmi _build/litiom_wizard.cmi
+	ocamlfind install $(PKG_NAME) $(SRC_DIR)/META $(LIB_FQTARGETS)
 
-doc: lib
-	mkdir -p html
-	ocamlfind ocamldoc -package lwt,ocsigen -v -html -keep-code -d html -I _build/ \
-	litiom_blocks.mli litiom_blocks.ml \
-	litiom_wizard.mli litiom_wizard.ml
-	cp style.css html
+uninstall:
+	ocamlfind remove $(PKG_NAME)
 
+reinstall: lib
+	ocamlfind remove $(PKG_NAME)
+	ocamlfind install $(PKG_NAME) $(SRC_DIR)/META $(LIB_FQTARGETS)
 
 clean:
-	ocamlbuild $(OCAMLBUILS_OPTS) -clean
+	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILD_OPTS) -clean
 
