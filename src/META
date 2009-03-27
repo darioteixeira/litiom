@@ -1,5 +1,6 @@
 name="litiom"
 version="0.1"
 description="The Litiom library"
-requires="threads,lwt,ocsigen"
+requires=""
 archive(byte)="litiom.cma"
+archive(native)="litiom.cmxs"
