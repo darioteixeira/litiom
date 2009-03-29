@@ -71,7 +71,13 @@ end
 
 module Carriers =
 struct
-	let none ~carried sp gp pp = `Success ()
+	let none ~carried sp gp pp = `Continue ()
+
+	let past_only ~carried sp gp pp = `Continue carried
+
+	let present_only ~carried sp gp pp = `Continue pp
+
+	let all ~carried sp gp pp = `Continue (carried, pp)
 end
 
 
@@ -101,17 +107,23 @@ struct
 		in (fallback, cancelled_content, error_content)
 
 
-	let make_last ~common ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params () =
+	let get_common ~common ?cancelled_content ?error_content () =
 		let (fallback, default_cancelled_content, default_error_content) = common in
 		let cancelled_content = match cancelled_content with
 			| Some thing	-> thing
 			| None 		-> default_cancelled_content
 		and error_content = match error_content with
 			| Some thing	-> thing
-			| None 		-> default_error_content in
-		let handler carried sp gp (pp, submit_param) = match submit_param with
-			| Submit.Proceed	-> normal_content ~carry:carried sp gp pp
-			| Submit.Cancel		-> cancelled_content sp
+			| None 		-> default_error_content
+		in (fallback, cancelled_content, error_content)
+
+
+	let make_last ~common ~normal_content ?cancelled_content ?error_content ~post_params () =
+		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
+		let handler carried sp gp (pp, submit_param) =
+			 match submit_param with
+				| Submit.Proceed	-> normal_content ~carried sp gp pp
+				| Submit.Cancel		-> cancelled_content sp
 		and register handler carried sp =
 			Eliom_predefmod.Xhtml.register_new_post_coservice_for_session
 				~sp
@@ -119,29 +131,23 @@ struct
 				~post_params: (post_params ** Submit.param)
 				~error_handler: (error_handler ~cancelled_content ~error_content)
 				(handler carried)
-		in (register, form_maker, handler)
+		in (register, handler)
 
 
-	let make_middle ~common ~form_maker ~carrier ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
-		let (fallback, default_cancelled_content, default_error_content) = common in
-		let cancelled_content = match cancelled_content with
-			| Some thing	-> thing
-			| None 		-> default_cancelled_content
-		and error_content = match error_content with
-			| Some thing	-> thing
-			| None 		-> default_error_content in
+	let make_middle ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
+		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carried sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
 				let result = carrier ~carried sp gp pp
 				in (match result with
-					| `Success carry ->
-						let (next_register, next_form_maker, next_handler) = next in
-						let form_maker (enter_next, enter_submit) =
-							(next_form_maker ~carry enter_next) @ [Submit.make_controls enter_submit] in
+					| `Continue carry ->
+						let (next_register, next_handler) = next in
+						let make_form (enter_next, enter_submit) =
+							(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
 						let next_service = next_register next_handler carry sp in
-						let form = Eliom_predefmod.Xhtml.post_form next_service sp form_maker gp
-						in normal_content ~carry ~form sp gp pp
-					| `Failure ->
+						let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
+						in normal_content ~carried ~carry ~form sp gp pp
+					| `Fail ->
 						error_content sp [])
 			| Submit.Cancel ->
 				cancelled_content sp
@@ -152,34 +158,28 @@ struct
 				~post_params: (post_params ** Submit.param)
 				~error_handler: (error_handler ~cancelled_content ~error_content)
 				(handler carried)
-		in (register, form_maker, handler)
+		in (register, handler)
 
 
-	let make_skippable ~common ~form_maker ~carrier ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
-		let (fallback, default_cancelled_content, default_error_content) = common in
-		let cancelled_content = match cancelled_content with
-			| Some thing	-> thing
-			| None 		-> default_cancelled_content
-		and error_content = match error_content with
-			| Some thing	-> thing
-			| None 		-> default_error_content in
+	let make_skippable ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
+		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carried sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
 				let result = carrier ~carried sp gp pp
 				in (match result with
 					| `Skip carry ->
-						let (_, _, next_handler) = next
-						in next_handler carried sp gp (None, Submit.Proceed)
-					| `Success carry ->
-						let (next_register, next_form_maker, next_handler) = next in
-						let real_next_handler carried sp gp (pp, submit_param) =
-							next_handler carried sp gp (Some pp, submit_param) in
-						let form_maker (enter_next, enter_submit) =
-							(next_form_maker ~carry enter_next) @ [Submit.make_controls enter_submit] in
+						let (_, next_handler) = next
+						in next_handler carry sp gp (None, Submit.Proceed)
+					| `Continue carry ->
+						let (next_register, next_handler) = next in
+						let real_next_handler carry sp gp (pp, submit_param) =
+							next_handler carry sp gp (Some pp, submit_param) in
+						let make_form (enter_next, enter_submit) =
+							(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
 						let next_service = next_register real_next_handler carry sp in
-						let form = Eliom_predefmod.Xhtml.post_form next_service sp form_maker gp
-						in normal_content ~carry ~form sp gp pp
-					| `Failure ->
+						let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
+						in normal_content ~carried ~carry ~form sp gp pp
+					| `Fail ->
 						error_content sp [])
 			| Submit.Cancel ->
 				cancelled_content sp
@@ -190,26 +190,23 @@ struct
 				~post_params: (post_params ** Submit.param)
 				~error_handler: (error_handler ~cancelled_content ~error_content)
 				(handler carried)
-		in (register, form_maker, handler)
+		in (register, handler)
 
 
-	let make_first ~common ~carrier ~normal_content ?error_content ~next () =
-		let (fallback, _, default_error_content) = common in
-		let error_content = match error_content with
-			| Some thing	-> thing
-			| None 		-> default_error_content in
-		let handler sp gp () =
-			let result = carrier ~carried:() sp gp ()
+	let make_first ~common ~carrier ~form_maker ~normal_content ?error_content ~next () =
+		let (fallback, _, error_content) = get_common ~common ?error_content () in
+		let handler carried sp gp () =
+			let result = carrier ~carried sp gp ()
 			in match result with
-				| `Success carry ->
-					let (next_register, next_form_maker, next_handler) = next in
-					let form_maker (enter_next, enter_submit) =
-						(next_form_maker ~carry enter_next) @ [Submit.make_controls enter_submit] in
+				| `Continue carry ->
+					let (next_register, next_handler) = next in
+					let make_form (enter_next, enter_submit) =
+						(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
 					let next_service = next_register next_handler carry sp in
-					let form = Eliom_predefmod.Xhtml.post_form next_service sp form_maker gp
-					in normal_content ~carry ~form sp gp ()
-				| `Failure ->
+					let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
+					in normal_content ~carried ~carry ~form sp gp ()
+				| `Fail ->
 					error_content sp []
-		in Eliom_predefmod.Xhtml.register fallback handler
+		in Eliom_predefmod.Xhtml.register fallback (handler ()) 
 end
 
