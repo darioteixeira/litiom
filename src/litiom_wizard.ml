@@ -73,9 +73,9 @@ module Carriers =
 struct
 	let none ~carried sp gp pp = `Continue ()
 
-	let past_only ~carried sp gp pp = `Continue carried
+	let past ~carried sp gp pp = `Continue carried
 
-	let present_only ~carried sp gp pp = `Continue pp
+	let present ~carried sp gp pp = `Continue pp
 
 	let all ~carried sp gp pp = `Continue (carried, pp)
 end
@@ -134,7 +134,7 @@ struct
 		in (register, handler)
 
 
-	let make_middle ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
+	let make_intermediate ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carried sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
@@ -193,10 +193,11 @@ struct
 		in (register, handler)
 
 
-	let make_first ~common ~carrier ~form_maker ~normal_content ?error_content ~next () =
-		let (fallback, _, error_content) = get_common ~common ?error_content () in
-		let handler carried sp gp () =
-			let result = carrier ~carried sp gp ()
+	let make_first_handler ~common ~carrier ~form_maker ~normal_content ?error_content ~next () =
+		let (_, _, error_content) = get_common ~common ?error_content () in
+		let handler sp gp pp =
+			let carried = () in
+			let result = carrier ~carried sp gp pp
 			in match result with
 				| `Continue carry ->
 					let (next_register, next_handler) = next in
@@ -204,9 +205,24 @@ struct
 						(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
 					let next_service = next_register next_handler carry sp in
 					let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
-					in normal_content ~carried ~carry ~form sp gp ()
+					in normal_content ~carried ~carry ~form sp gp pp
 				| `Fail ->
 					error_content sp []
-		in Eliom_predefmod.Xhtml.register fallback (handler ()) 
+		in handler
+
+
+	let make_first ?sp ~common ~carrier ~form_maker ~normal_content ?error_content ~next () =
+		let (fallback, _, _) = get_common ~common () in
+		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?error_content ~next ()
+		in Eliom_predefmod.Xhtml.register ?sp ~service:fallback handler
+
+
+(*
+	let make_first_with_post ~common ~carrier ~form_maker ~normal_content ~fallback_content ~post_params ?error_content ~next () =
+		let (fallback, _, _) = get_common ~common () in
+		let () = Eliom_predefmod.Xhtml.register ~service:fallback fallback_content in
+		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?error_content ~next ()
+		in Eliom_predefmod.Xhtml.register_new_post_service ~fallback ~post_params handler
+*)
 end
 
