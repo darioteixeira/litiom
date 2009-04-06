@@ -1,7 +1,7 @@
 (********************************************************************************)
 (**	Litiom_wizard module.
 
-	Copyright (c) 2008 Dario Teixeira (dario.teixeira\@yahoo.com)
+	Copyright (c) 2009 Dario Teixeira (dario.teixeira\@yahoo.com)
 
 	This software is distributed under the terms of the GNU GPL version 2.
 	See LICENSE file for full license text.
@@ -115,7 +115,7 @@ struct
 		and error_content = match error_content with
 			| Some thing	-> thing
 			| None 		-> default_error_content
-		in (fallback, cancelled_content, error_content)
+		in ((fallback : ('a, unit, [ `Attached of [ `Internal of [ `Coservice | `Service ] * [ `Get ] ] Eliom_services.a_s ], 'b, 'c, unit, [ `Registrable ]) Eliom_services.service :> ('get,unit, [> `Attached of [> `Internal of [> `Service ] * [> `Get] ] Eliom_services.a_s ], 'tipo,'gn, unit, [> `Registrable ]) Eliom_services.service), cancelled_content, error_content)
 
 
 	let make_last ~common ~normal_content ?cancelled_content ?error_content ~post_params () =
@@ -217,12 +217,10 @@ struct
 		in Eliom_predefmod.Xhtml.register ?sp ~service:fallback handler
 
 
-(*
 	let make_first_with_post ~common ~carrier ~form_maker ~normal_content ~fallback_content ~post_params ?error_content ~next () =
 		let (fallback, _, _) = get_common ~common () in
 		let () = Eliom_predefmod.Xhtml.register ~service:fallback fallback_content in
-		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?error_content ~next ()
-		in Eliom_predefmod.Xhtml.register_new_post_service ~fallback ~post_params handler
-*)
+		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?error_content ~next () in
+		Eliom_predefmod.Xhtml.register_new_post_service ~fallback ~post_params handler
 end
 
