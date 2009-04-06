@@ -226,7 +226,11 @@
 
 
 (********************************************************************************)
-(**	{2 API}									*)
+(**	{2 Public API}								*)
+(********************************************************************************)
+
+(********************************************************************************)
+(**	{3 Submit module}							*)
 (********************************************************************************)
 
 module type SUBMIT =
@@ -242,7 +246,14 @@ module type SUBMIT =
       [< t Eliom_parameters.setoneradio ] Eliom_parameters.param_name ->
       [> `Fieldset ] XHTML.M.elt
   end
+
 module Submit : SUBMIT
+
+
+(********************************************************************************)
+(**	{3 Carriers module}							*)
+(********************************************************************************)
+
 module Carriers :
   sig
     val none : carried:'a -> 'b -> 'c -> 'd -> [> `Continue of unit ]
@@ -250,12 +261,14 @@ module Carriers :
     val present : carried:'a -> 'b -> 'c -> 'd -> [> `Continue of 'd ]
     val all : carried:'a -> 'b -> 'c -> 'd -> [> `Continue of 'a * 'd ]
   end
-module Steps :
-  sig
-    val error_handler :
-      cancelled_content:(Eliom_sessions.server_params -> 'a Lwt.t) ->
-      error_content:(Eliom_sessions.server_params -> 'b -> 'a Lwt.t) ->
-      Eliom_sessions.server_params -> 'b -> 'a Lwt.t
+
+
+(********************************************************************************)
+(**	{3 Steps module}							*)
+(********************************************************************************)
+
+module Steps:
+sig
     val make_common :
       path:Ocsigen_extensions.url_path ->
       get_params:('a, [< Eliom_services.suff ] as 'b, 'c)
@@ -268,22 +281,8 @@ module Steps :
             [> `Internal of [> `Service ] * [> `Get ] ] Eliom_services.a_s ],
        'b, 'c, unit, [> `Registrable ])
       Eliom_services.service * 'd * 'e
-    val get_common :
-      common:('a, unit,
-              [ `Attached of
-                  [ `Internal of [ `Coservice | `Service ] * [ `Get ] ]
-                  Eliom_services.a_s ],
-              'b, 'c, unit, [ `Registrable ])
-             Eliom_services.service * 'd * 'e ->
-      ?cancelled_content:'d ->
-      ?error_content:'e ->
-      unit ->
-      ('a, unit,
-       [> `Attached of
-            [> `Internal of [ `Coservice | `Service ] * [> `Get ] ]
-            Eliom_services.a_s ],
-       'b, 'c, unit, [> `Registrable ])
-      Eliom_services.service * 'd * 'e
+
+
     val make_last :
       common:('a, unit,
               [ `Attached of
@@ -319,6 +318,8 @@ module Steps :
       ('d ->
        Eliom_sessions.server_params ->
        'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
+
+
     val make_intermediate :
       common:('a, unit,
               [ `Attached of
@@ -371,6 +372,8 @@ module Steps :
       ('d ->
        Eliom_sessions.server_params ->
        'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
+
+
     val make_skippable :
       common:('a, unit,
               [ `Attached of
@@ -427,35 +430,8 @@ module Steps :
       ('d ->
        Eliom_sessions.server_params ->
        'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
-    val make_first_handler :
-      common:('a, unit,
-              [ `Attached of
-                  [ `Internal of [ `Coservice | `Service ] * [ `Get ] ]
-                  Eliom_services.a_s ],
-              'b, 'c, unit, [ `Registrable ])
-             Eliom_services.service * 'd *
-             (Eliom_sessions.server_params -> 'e list -> 'f) ->
-      carrier:(carried:unit ->
-               Eliom_sessions.server_params ->
-               'g -> 'h -> [< `Continue of 'i | `Fail ]) ->
-      form_maker:(carried:unit ->
-                  carry:'i -> 'j -> Xhtmltypes.form_content XHTML.M.elt list) ->
-      normal_content:(carried:unit ->
-                      carry:'i ->
-                      form:[> Xhtmltypes.form ] XHTML.M.elt ->
-                      Eliom_sessions.server_params -> 'g -> 'h -> 'f) ->
-      ?error_content:(Eliom_sessions.server_params -> 'e list -> 'f) ->
-      next:('k ->
-            'i ->
-            Eliom_sessions.server_params ->
-            ('g, 'l, [< Eliom_services.post_service_kind ],
-             [< Eliom_services.suff ], 'm,
-             'j *
-             [< Submit.t Eliom_parameters.setoneradio ]
-             Eliom_parameters.param_name, [< Eliom_services.registrable ])
-            Eliom_services.service) *
-           'k ->
-      unit -> Eliom_sessions.server_params -> 'g -> 'h -> 'f
+
+
     val make_first :
       ?sp:Eliom_sessions.server_params ->
       common:('a, unit,
@@ -489,6 +465,8 @@ module Steps :
             Eliom_services.service) *
            'g ->
       unit -> unit
+
+
     val make_first_with_post :
       common:('a, unit,
               [ `Attached of
@@ -530,5 +508,5 @@ module Steps :
             Eliom_services.a_s ],
        'b, 'c, 'i, [> `Registrable ])
       Eliom_services.service
-  end
+end
 
