@@ -11,9 +11,12 @@
 *)
 (********************************************************************************)
 
+(********************************************************************************)
+(**	{2 Litiom_wizard Tutorial}						*)
+(********************************************************************************)
 
 (********************************************************************************)
-(**	{2 Introduction}							*)
+(**	{3 Introduction}							*)
 (********************************************************************************)
 
 (**	This module aims to simplify the construction of wizard-like interactions
@@ -40,188 +43,201 @@
 	The above described facilities are offered by the {!Steps} submodule, and
 	this document continues with a tutorial explaining how that submodule should
 	be used.  The tutorial is based on a simple example: a three-step wizard
-	that asks for an integer [a] on the first step, another integer [b] on the
-	second step, and presents the result of [a+b] on the third and last step.
+	that asks for an integer [x] on the first step, another integer [y] on the
+	second step, and presents the result of [x+y] on the third and last step.
 *)
 
 
 (********************************************************************************)
-(**	{2 Tutorial}								*)
+(**	{3 Using the steps module}						*)
 (********************************************************************************)
 
 (**	The {!Steps} module provides a moderately low-level interface to the
 	construction of a wizard.  By {i low-level}, it is meant that the user
-	must declare each wizard step explicitly and separately; moreover, the
+	must declare each wizard step explicitly and separately;  moreover, the
 	wizard steps must be declared in reverse sequential order (a tell-tale
 	sign that the underlying [Eliom] mechanism is not rendered completely
 	opaque to the user of the module).
 
-	We begin by declaring the blocks that constitute the site.  {!Litiom_wizard}
-	relies on {!Litiom_blocks}, and therefore these blocks must be built to
-	satisfy the requirements of the latter module.  The first block, [get_login]
-	is a source node that returns the currently logged in user (or suppose it
-	does; to simplify the example if just returns a fixed integer).  The two
-	blocks that follow, [header] and [footer] will appear in every page.  Finally,
-	the blocks [cancelled_canvas] and [error_frame] are the special blocks that
-	should be shown should the user cancel the wizard or an error situation occur,
-	respectively.  Note that with the exception of [get_login], all blocks are
-	are sinks, returning actual XHTML content:
+	Only linear wizards are supported.  There is however support for wizards
+	where one or more intermediate steps may be skipped.  The wizard may take
+	GET parameters, in which case they are common to all steps of the wizard.
+	Each step (except the last) also creates a form whose values are passed
+	to the subsequent step as POST parameters.  There is also a facility for
+	carrying any values from one step to the next.
+
+	We begin by declaring the commonalities to all steps of the wizard.
+	These include the URL path, the GET parameters, and the default handlers
+	to be invoked when the user cancels the wizard or an error occurs (note
+	that each wizard step may override these defaults).  The common elements
+	are declared via the {!Steps.make_common} function, as examplified by the
+	following code:
 
 	{v
-	let get_login sp () =
-		Lwt.return 10
-
-	let header _ _ =
-		Lwt.return [div [h1 [pcdata "header"]]]
-
-	let footer _ _ =
-		Lwt.return [div [h1 [pcdata "footer"]]]
-
-	let cancelled_canvas _ _ =
-		Lwt.return [div [h1 [pcdata "Cancelled!"]]]
-
-	let error_frame exc_list = fun _ _ ->
-		Lwt.return [div [h1 [pcdata "Error!"]]]
+	let common =
+		let cancelled_content sp =
+			Lwt.return
+				(html
+				(head (title (pcdata "Wizard cancelled")) [])
+				(body [p [pcdata "You cancelled!"]]))
+		and error_content sp exc_list =
+			Lwt.return
+				(html
+				(head (title (pcdata "Wizard error")) [])
+				(body [p [pcdata "There was an error!"]]))
+		in Steps.make_common
+			~path: ["wizard"]
+			~get_params: Eliom_parameters.unit
+			~cancelled_content
+			~error_content
+			()
 	v}
 
 
-	We then define the standard page builder, using the plumbing primitives from
-	{!Litiom_blocks}.  Note that the every page is composed of three visible boxes:
-	a constant header and footer, and a "frame" box which varies from page to page.
-
-	{v
-	let standard_handler ~page_title sp frame_tree =
-		let tree =
-			container
-				(source get_login)
-				[
-				sink header;
-				frame_tree;
-				sink footer
-				]
-		in run_tree sp tree >>= fun page_body ->
-		Lwt.return
-			(html
-				(head (title (pcdata page_title)) [])
-				(body page_body))
-	v}
-
-
-	We must also declare the fallback for the wizard steps.  This fallback will be
-	passed to all the functions that create the wizard steps.
-
-	{v
-	let fallback =
-        Eliom_services.new_service
-                ~path: [""]
-                ~get_params: Eliom_parameters.unit
-                ()
-	v}
-
-	
-	We can at last create the various steps of the wizard.  Remember that the steps
-	must be declared in reverse order.  We therefore begin with the last, created by
-	function {!Steps.make_last}.  As for the parameters to this function, here's
-	what you should know:
+	The {!Steps} module has three main step-creation functions, some of which
+	have variant forms.  The functions are as follows:
 
 	{ul
-		{li [fallback] is the customary [Eliom] fallback for expired services, etc.}
-		{li [tree_builder] is a function that constructs a page.  This function takes
-		two arguments: the usual [sp] server parameters, and a [frame_tree] containing
-		the block that defines the frame.}
-		{li [carrier] defines how the step's parameters should be given to the [contents]
-		function and eventually carried over to the next step.  Each step (except the first)
-		will typically have two sets of parameters: those carried over from the previous step,
-		and the steps specific to the current step.  The function specified by [carrier] takes
-		the two sets of parameters and should return the value to be passed on to the next step.
-		You can define your own carrier function, or use one of those provided by the {!Carriers}
-		module.}
-		{li [contents] is the function that produces the step's contents.  For all steps except
-		the last, the contents should be a form; as for the last step, the contents are simply
-		an XHTML element.  As for the parameters to the [contents] function itself, they are
-		as follows:
-		{ul
-			{li [sp] are the server parameters, as defined by [Eliom].}
-			{li [bp] are the block parameter, as commonly used with {!Litiom_blocks}.}
-			{li [gp] are the GET parameters of the service.}
-			{li [pp] are POST parameters of the service.}
-			{li [carry] is the result of the [carrier] function described above.}}}
-		{li [cancelled_canvas] is the special frame that should be displayed (instead of [contents])
-		should the user press the "Cancel" button.}
-		{li [error_frame] is the special frame that should be displayed (instead of [contents])
-		should there be an error in the forms parameters.}
-		{li [params] are the step's specific (POST) parameters.  These should be specified in the
-		[Eliom_parameters] format.}}
+		{li {!Steps.make_last} is only used once per wizard, to create the
+		final step.}
+		{li {!Steps.make_first} is also only used once per wizard, to create
+		the initial step.  (There is a variant {!Steps.make_first_with_post}
+		that can be used if the first step has POST parameters).}
+		{li {!Steps.make_intermediate} is used to create the intermediate (ie,
+		neither initial nor final) steps of the wizard.  In a wizard with N
+		steps, there will be N-2 intermediate steps.  (Note that there is a
+		variant {!Steps.make_skippable} that creates an intermediate step that
+		may be skipped).}}
+
+
+	Remember that we are creating a wizard with 3 steps, none of which are skippable
+	(note that the first and last steps are never skippable!), and whose first step
+	takes no POST parameters.  We will therefore use functions {!Steps.make_first},
+	{!Steps.make_intermediate}, and {!Steps.make_last} to create steps 1, 2, and 3,
+	respectively.
+
+	Because the steps must be declared in reverse order, we begin by the last one.
+	Do bear in mind, however, that it is often easier to write and understand the
+	code if you begin by the first step.  The mandatory parameters to function
+	{!Steps.make_last} include the [common] elements that were previosuly declared,
+	the [normal_content] handler that produces the actual contents of the wizard,
+	and the [post_params] stating the parameters for this step.  You may optionally
+	declare new [cancelled_content] or [error_content] handlers if you don't wish
+	to use the default ones.
+
+	The [normal_content] resembles a normal [Eliom] handler, but takes extra named
+	parameters.  For the last wizard step, only the extra parameter [carried] is given.
+	This parameter contains whatever value was carried out from the previous step.
+	In this case, the value [x] is carried.
 
 	{v
 	let step3 =
-		let step3_contents ~sp ~bp ~gp ~pp ~carry =
-			let (a, b) = carry
-			in      [
-				p [pcdata (Printf.sprintf "%d + %d = %d" a b (a + b))];
-				p [pcdata (Printf.sprintf "Login = %d" bp)]
-				]
-		in Litiom_wizard.Steps.make_last
-			~fallback
-			~tree_builder: (standard_handler ~page_title:"Step 3/3")
-			~carrier: Litiom_wizard.Carriers.carry_both
-			~contents: step3_contents
-			~cancelled_canvas: (sink cancelled_canvas)
-			~error_frame: (fun exc_list -> sink (error_frame exc_list))
-			~params: (Eliom_parameters.int "b")
+		let normal_content ~carried:x sp () y =
+			Lwt.return
+				(html
+				(head (title (pcdata "Wizard step 3")) [])
+				(body
+					[
+					p [pcdata ("X is " ^ (string_of_int x))];
+					p [pcdata ("Y is " ^ (string_of_int y))];
+					p [pcdata ("X + Y is " ^ (string_of_int (x+y)))];
+					]))
+		in Steps.make_last
+			~common
+			~normal_content
+			~post_params: (Eliom_parameters.int "y")
+			()
 	v}
 
 
-	Since this example contains a total of only three steps, there is only one intermediate
-	(ie, neither initial nor final) step.  It must be created with the {!Steps.make_middle}
-	function.  Should there have been more intermediate steps, all of them would likewise have
-	been created via this function.  Note that the function's parameters are nearly identical
-	to those described for {!Steps.make_last}, differing only in the addition of the
-	[next_step_register] parameter.
+	We now declare the second-to-last step of wizard (which also happens to be the second
+	step).  This step is neither the first nor the last, and because it may not be skipped
+	it is declared via the {!Steps.make_intermediate} function.  Besides the already described
+	[common], [normal_content], and [post_params] parameters, an intermediate step requires
+	also the provision of a [carrier] function, a [form_maker], and a pointer to the step
+	that follows.
+
+	The [carrier] is an important concept in [Litiom_wizard].  It is basically a function
+	that given the parameters carried from previous steps, plus the GET and POST parameters
+	given to the current step, decides whether the wizard should continue as normal, fail
+	altogether, or if the current step is skippable, be skipped.  In the first and last
+	cases, the value to be carried over to the next step must also be provided.  The return
+	values are respectively [`Proceed carry], [`Cancel], and [`Skip carry].  (Remember that
+	during the declaration of [step3], we stated that the value [x] was carried over from
+	the previous step.  Therefore, the carrier for [step2] must return [`Proceed x]).
+
+	The [form_maker] is a function that creates the form for the next step.  The approach
+	is similar to that used by [Eliom.post_form], with the difference that [form_maker]
+	takes two additional named parameters: [carried] with the value carried over from the
+	previous step, and [carry] with the result to be carried over to the next step, as
+	returned by the [carrier] function.  Note that the "Cancel" and "Proceed" buttons
+	that animate the wizard are automatically added, and you do not need to worry about
+	those.
+
+	The [normal_content] function is similar to the one described for the final step,
+	with the difference that in the initial and intermediate steps this function takes
+	two additional parameters: [carry] is the value to be carried over to the next step,
+	and [form] is the corresponding generated form.
 
 	{v
 	let step2 =
-		let step2_contents ~sp ~bp ~gp ~pp ~carry enter_b =
+		let carrier ~carried sp () x =
+			`Proceed x in
+		let form_maker ~carried ~carry enter_y =
 			[
 			fieldset ~a:[a_class ["form_fields"]]
 				[
-				label ~a:[a_for "enter_b"] [pcdata "Enter number 'B':"];
-				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_b"] ~input_type:`Text ~name:enter_b ();
+				label ~a:[a_for "enter_y"] [pcdata "Enter int Y:"];
+				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_y"] ~input_type:`Text ~name:enter_y ();
 				]
-			]
-		in Litiom_wizard.Steps.make_middle
-			~fallback
-			~tree_builder: (standard_handler ~page_title:"Step 2/3")
-			~carrier: Litiom_wizard.Carriers.carry_current
-			~contents: step2_contents
-			~next_step_register: step3
-			~cancelled_canvas: (sink cancelled_canvas)
-			~error_frame: (fun exc_list -> sink (error_frame exc_list))
-			~params: (Eliom_parameters.int "a")
+			] in
+		let normal_content ~carried ~carry ~form sp () x =
+			Lwt.return
+				(html
+				(head (title (pcdata "Wizard step 2")) [])
+				(body [form]))
+		in Steps.make_intermediate
+			~common
+			~carrier
+			~form_maker
+			~normal_content
+			~post_params: (Eliom_parameters.int "x")
+			~next: step3
+			()
 	v}
 
 
-	Finally, we create the first step of the wizard.  Note that the first step
-	does not take any POST parameters, and does not require the provision of
-	special frames for error and cancellation situations.
+	Finally we declare the first step of the wizard.  The parameters given to function
+	{!Steps.make_first} are similar to those given in the intermediate step.  To note
+	is the fact that no POST parameters are given, and that instead of providing a
+	custom carrier function, we instead rely on one of the standard carriers defined
+	in the {!Carriers} module.
 
 	{v
 	let step1 =
-		let step1_contents ~sp ~bp ~gp ~pp ~carry enter_a =
+		let form_maker ~carried ~carry enter_x =
 			[
 			fieldset ~a:[a_class ["form_fields"]]
 				[
-				label ~a:[a_for "enter_a"] [pcdata "Enter number 'A':"];
-				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_a"] ~input_type:`Text ~name:enter_a ();
+				label ~a:[a_for "enter_x"] [pcdata "Enter int X:"];
+				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_x"] ~input_type:`Text ~name:enter_x ();
 				]
-			]
-		in Litiom_wizard.Steps.make_first
-			~fallback
-			~tree_builder: (standard_handler ~page_title:"Step 1/3")
-			~carrier: Litiom_wizard.Carriers.carry_none
-			~contents: step1_contents
-			~next_step_register: step2
+			] in
+		let normal_content ~carried ~carry ~form sp () () =
+			Lwt.return
+				(html
+				(head (title (pcdata "Wizard step 1")) [])
+				(body [form]))
+		in Steps.make_first
+			~common
+			~carrier: Carriers.none
+			~form_maker
+			~normal_content
+			~next: step2
+			()
 	v}
+
+
 	*)
 
 
@@ -256,10 +272,10 @@ module Submit : SUBMIT
 
 module Carriers :
   sig
-    val none : carried:'a -> 'b -> 'c -> 'd -> [> `Continue of unit ]
-    val past : carried:'a -> 'b -> 'c -> 'd -> [> `Continue of 'a ]
-    val present : carried:'a -> 'b -> 'c -> 'd -> [> `Continue of 'd ]
-    val all : carried:'a -> 'b -> 'c -> 'd -> [> `Continue of 'a * 'd ]
+    val none : carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of unit ]
+    val past : carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a ]
+    val present : carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'd ]
+    val all : carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a * 'd ]
   end
 
 
@@ -333,7 +349,7 @@ sig
               (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carried:'d ->
                Eliom_sessions.server_params ->
-               'e -> 'f -> [< `Continue of 'g | `Fail ]) ->
+               'e -> 'f -> [< `Proceed of 'g | `Cancel ]) ->
       form_maker:(carried:'d ->
                   carry:'g -> 'h -> Xhtmltypes.form_content XHTML.M.elt list) ->
       normal_content:(carried:'d ->
@@ -387,7 +403,7 @@ sig
               (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carried:'d ->
                Eliom_sessions.server_params ->
-               'e -> 'f -> [< `Continue of 'g | `Fail | `Skip of 'h ]) ->
+               'e -> 'f -> [< `Proceed of 'g | `Cancel | `Skip of 'h ]) ->
       form_maker:(carried:'d ->
                   carry:'g -> 'i -> Xhtmltypes.form_content XHTML.M.elt list) ->
       normal_content:(carried:'d ->
@@ -444,7 +460,7 @@ sig
               'd list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carried:unit ->
                Eliom_sessions.server_params ->
-               'a -> unit -> [< `Continue of 'e | `Fail ]) ->
+               'a -> unit -> [< `Proceed of 'e | `Cancel ]) ->
       form_maker:(carried:unit ->
                   carry:'e -> 'f -> Xhtmltypes.form_content XHTML.M.elt list) ->
       normal_content:(carried:unit ->
@@ -478,7 +494,7 @@ sig
               'e list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carried:unit ->
                Eliom_sessions.server_params ->
-               'a -> 'f -> [< `Continue of 'g | `Fail ]) ->
+               'a -> 'f -> [< `Proceed of 'g | `Cancel ]) ->
       form_maker:(carried:unit ->
                   carry:'g -> 'h -> Xhtmltypes.form_content XHTML.M.elt list) ->
       normal_content:(carried:unit ->

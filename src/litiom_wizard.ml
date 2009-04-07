@@ -71,13 +71,13 @@ end
 
 module Carriers =
 struct
-	let none ~carried sp gp pp = `Continue ()
+	let none ~carried sp gp pp = `Proceed ()
 
-	let past ~carried sp gp pp = `Continue carried
+	let past ~carried sp gp pp = `Proceed carried
 
-	let present ~carried sp gp pp = `Continue pp
+	let present ~carried sp gp pp = `Proceed pp
 
-	let all ~carried sp gp pp = `Continue (carried, pp)
+	let all ~carried sp gp pp = `Proceed (carried, pp)
 end
 
 
@@ -140,14 +140,14 @@ struct
 			| Submit.Proceed ->
 				let result = carrier ~carried sp gp pp
 				in (match result with
-					| `Continue carry ->
+					| `Proceed carry ->
 						let (next_register, next_handler) = next in
 						let make_form (enter_next, enter_submit) =
 							(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
 						let next_service = next_register next_handler carry sp in
 						let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
 						in normal_content ~carried ~carry ~form sp gp pp
-					| `Fail ->
+					| `Cancel ->
 						error_content sp [])
 			| Submit.Cancel ->
 				cancelled_content sp
@@ -170,7 +170,7 @@ struct
 					| `Skip carry ->
 						let (_, next_handler) = next
 						in next_handler carry sp gp (None, Submit.Proceed)
-					| `Continue carry ->
+					| `Proceed carry ->
 						let (next_register, next_handler) = next in
 						let real_next_handler carry sp gp (pp, submit_param) =
 							next_handler carry sp gp (Some pp, submit_param) in
@@ -179,7 +179,7 @@ struct
 						let next_service = next_register real_next_handler carry sp in
 						let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
 						in normal_content ~carried ~carry ~form sp gp pp
-					| `Fail ->
+					| `Cancel ->
 						error_content sp [])
 			| Submit.Cancel ->
 				cancelled_content sp
@@ -199,14 +199,14 @@ struct
 			let carried = () in
 			let result = carrier ~carried sp gp pp
 			in match result with
-				| `Continue carry ->
+				| `Proceed carry ->
 					let (next_register, next_handler) = next in
 					let make_form (enter_next, enter_submit) =
 						(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
 					let next_service = next_register next_handler carry sp in
 					let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
 					in normal_content ~carried ~carry ~form sp gp pp
-				| `Fail ->
+				| `Cancel ->
 					error_content sp []
 		in handler
 
