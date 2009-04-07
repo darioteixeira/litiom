@@ -1,0 +1,5 @@
+directory = "."
+requires = "litiom"
+archive(plugin,byte) = "module.cma"
+archive(plugin,native) = "module.cmxs"
+
