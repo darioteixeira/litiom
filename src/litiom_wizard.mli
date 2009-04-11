@@ -1,10 +1,8 @@
 (********************************************************************************)
-(**	Litiom_wizard module.
+(**	The [Litiom_wizard] module offers routines aiming to automate and
+	simplify the construction of wizard-like interactions in websites.
 
-	This module offers routines aiming to automate and simplify
-	the construction of wizard-like interactions in websites.
-
-	Copyright (c) 2008 Dario Teixeira (dario.teixeira\@yahoo.com)
+	Copyright (c) 2009 Dario Teixeira (dario.teixeira\@yahoo.com)
 
 	This software is distributed under the terms of the GNU GPL version 2.
 	See LICENSE file for full license text.
@@ -270,13 +268,13 @@ module Submit : SUBMIT
 (**	{3 Carriers module}							*)
 (********************************************************************************)
 
-module Carriers :
-  sig
-    val none : carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of unit ]
-    val past : carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a ]
-    val present : carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'd ]
-    val all : carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a * 'd ]
-  end
+module Carriers:
+sig
+	val none: carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of unit ]
+	val past: carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a ]
+	val present: carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'd ]
+	val both: carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a * 'd ]
+end
 
 
 (********************************************************************************)
@@ -285,244 +283,244 @@ module Carriers :
 
 module Steps:
 sig
-    val make_common :
-      path:Ocsigen_extensions.url_path ->
-      get_params:('a, [< Eliom_services.suff ] as 'b, 'c)
-                 Eliom_parameters.params_type ->
-      cancelled_content:'d ->
-      error_content:'e ->
-      unit ->
-      ('a, unit,
-       [> `Attached of
-            [> `Internal of [> `Service ] * [> `Get ] ] Eliom_services.a_s ],
-       'b, 'c, unit, [> `Registrable ])
-      Eliom_services.service * 'd * 'e
+	val make_common:
+		path:Ocsigen_extensions.url_path ->
+		get_params:('a, [< Eliom_services.suff ] as 'b, 'c)
+		Eliom_parameters.params_type ->
+		cancelled_content:'d ->
+		error_content:'e ->
+		unit ->
+		('a, unit,
+		[> `Attached of
+		[> `Internal of [> `Service ] * [> `Get ] ] Eliom_services.a_s ],
+		'b, 'c, unit, [> `Registrable ])
+		Eliom_services.service * 'd * 'e
 
 
-    val make_last :
-      common:('a, unit,
-              [ `Attached of
-                  [ `Internal of [ `Coservice | `Service ] * [ `Get ] ]
-                  Eliom_services.a_s ],
-              [< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
-             Eliom_services.service *
-             (Eliom_sessions.server_params ->
-              Eliom_predefmod.Xhtml.page Lwt.t) *
-             (Eliom_sessions.server_params ->
-              (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      normal_content:(carried:'d ->
-                      Eliom_sessions.server_params ->
-                      'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?cancelled_content:(Eliom_sessions.server_params ->
-                          Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?error_content:(Eliom_sessions.server_params ->
-                      (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      post_params:('g, [ `WithoutSuffix ], 'h) Eliom_parameters.params_type ->
-      unit ->
-      (('i ->
-        Eliom_sessions.server_params ->
-        'a -> 'g * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-       'i ->
-       Eliom_sessions.server_params ->
-       ('a, 'g * Submit.t,
-        [> `Attached of
-             [> `Internal of [> `Coservice ] * [> `Post ] ]
-             Eliom_services.a_s ],
-        'b, 'c, 'h * [ `One of Submit.t ] Eliom_parameters.param_name,
-        [> `Registrable ])
-       Eliom_services.service) *
-      ('d ->
-       Eliom_sessions.server_params ->
-       'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
+	val make_last:
+		common:('a, unit,
+		[ `Attached of
+		[ `Internal of [ `Coservice | `Service ] * [ `Get ] ]
+		Eliom_services.a_s ],
+		[< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
+		Eliom_services.service *
+		(Eliom_sessions.server_params ->
+		Eliom_predefmod.Xhtml.page Lwt.t) *
+		(Eliom_sessions.server_params ->
+		(string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		normal_content:(carried:'d ->
+		Eliom_sessions.server_params ->
+		'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		?cancelled_content:(Eliom_sessions.server_params ->
+		Eliom_predefmod.Xhtml.page Lwt.t) ->
+		?error_content:(Eliom_sessions.server_params ->
+		(string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		post_params:('g, [ `WithoutSuffix ], 'h) Eliom_parameters.params_type ->
+		unit ->
+		(('i ->
+		Eliom_sessions.server_params ->
+		'a -> 'g * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		'i ->
+		Eliom_sessions.server_params ->
+		('a, 'g * Submit.t,
+		[> `Attached of
+		[> `Internal of [> `Coservice ] * [> `Post ] ]
+		Eliom_services.a_s ],
+		'b, 'c, 'h * [ `One of Submit.t ] Eliom_parameters.param_name,
+		[> `Registrable ])
+		Eliom_services.service) *
+		('d ->
+		Eliom_sessions.server_params ->
+		'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
 
 
-    val make_intermediate :
-      common:('a, unit,
-              [ `Attached of
-                  [ `Internal of [ `Coservice | `Service ] * [ `Get ] ]
-                  Eliom_services.a_s ],
-              [< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
-             Eliom_services.service *
-             (Eliom_sessions.server_params ->
-              Eliom_predefmod.Xhtml.page Lwt.t) *
-             (Eliom_sessions.server_params ->
-              (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(carried:'d ->
-               Eliom_sessions.server_params ->
-               'e -> 'f -> [< `Proceed of 'g | `Cancel ]) ->
-      form_maker:(carried:'d ->
-                  carry:'g -> 'h -> Xhtmltypes.form_content XHTML.M.elt list) ->
-      normal_content:(carried:'d ->
-                      carry:'g ->
-                      form:[> Xhtmltypes.form ] XHTML.M.elt ->
-                      Eliom_sessions.server_params ->
-                      'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?cancelled_content:(Eliom_sessions.server_params ->
-                          Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?error_content:(Eliom_sessions.server_params ->
-                      (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      post_params:('i, [ `WithoutSuffix ], 'j) Eliom_parameters.params_type ->
-      next:('k ->
-            'g ->
-            Eliom_sessions.server_params ->
-            ('e, 'l, [< Eliom_services.post_service_kind ],
-             [< Eliom_services.suff ], 'm,
-             'h *
-             [< Submit.t Eliom_parameters.setoneradio ]
-             Eliom_parameters.param_name, [< Eliom_services.registrable ])
-            Eliom_services.service) *
-           'k ->
-      unit ->
-      (('n ->
-        Eliom_sessions.server_params ->
-        'a -> 'i * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-       'n ->
-       Eliom_sessions.server_params ->
-       ('a, 'i * Submit.t,
-        [> `Attached of
-             [> `Internal of [> `Coservice ] * [> `Post ] ]
-             Eliom_services.a_s ],
-        'b, 'c, 'j * [ `One of Submit.t ] Eliom_parameters.param_name,
-        [> `Registrable ])
-       Eliom_services.service) *
-      ('d ->
-       Eliom_sessions.server_params ->
-       'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
+	val make_intermediate :
+		common:('a, unit,
+		[ `Attached of
+		[ `Internal of [ `Coservice | `Service ] * [ `Get ] ]
+		Eliom_services.a_s ],
+		[< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
+		Eliom_services.service *
+		(Eliom_sessions.server_params ->
+		Eliom_predefmod.Xhtml.page Lwt.t) *
+		(Eliom_sessions.server_params ->
+		(string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		carrier:(carried:'d ->
+		Eliom_sessions.server_params ->
+		'e -> 'f -> [< `Proceed of 'g | `Cancel ]) ->
+		form_maker:(carried:'d ->
+		carry:'g -> 'h -> Xhtmltypes.form_content XHTML.M.elt list) ->
+		normal_content:(carried:'d ->
+		carry:'g ->
+		form:[> Xhtmltypes.form ] XHTML.M.elt ->
+		Eliom_sessions.server_params ->
+		'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		?cancelled_content:(Eliom_sessions.server_params ->
+		Eliom_predefmod.Xhtml.page Lwt.t) ->
+		?error_content:(Eliom_sessions.server_params ->
+		(string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		post_params:('i, [ `WithoutSuffix ], 'j) Eliom_parameters.params_type ->
+		next:('k ->
+		'g ->
+		Eliom_sessions.server_params ->
+		('e, 'l, [< Eliom_services.post_service_kind ],
+		[< Eliom_services.suff ], 'm,
+		'h *
+		[< Submit.t Eliom_parameters.setoneradio ]
+		Eliom_parameters.param_name, [< Eliom_services.registrable ])
+		Eliom_services.service) *
+		'k ->
+		unit ->
+		(('n ->
+		Eliom_sessions.server_params ->
+		'a -> 'i * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		'n ->
+		Eliom_sessions.server_params ->
+		('a, 'i * Submit.t,
+		[> `Attached of
+		[> `Internal of [> `Coservice ] * [> `Post ] ]
+		Eliom_services.a_s ],
+		'b, 'c, 'j * [ `One of Submit.t ] Eliom_parameters.param_name,
+		[> `Registrable ])
+		Eliom_services.service) *
+		('d ->
+		Eliom_sessions.server_params ->
+		'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
 
 
-    val make_skippable :
-      common:('a, unit,
-              [ `Attached of
-                  [ `Internal of [ `Coservice | `Service ] * [ `Get ] ]
-                  Eliom_services.a_s ],
-              [< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
-             Eliom_services.service *
-             (Eliom_sessions.server_params ->
-              Eliom_predefmod.Xhtml.page Lwt.t) *
-             (Eliom_sessions.server_params ->
-              (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(carried:'d ->
-               Eliom_sessions.server_params ->
-               'e -> 'f -> [< `Proceed of 'g | `Cancel | `Skip of 'h ]) ->
-      form_maker:(carried:'d ->
-                  carry:'g -> 'i -> Xhtmltypes.form_content XHTML.M.elt list) ->
-      normal_content:(carried:'d ->
-                      carry:'g ->
-                      form:[> Xhtmltypes.form ] XHTML.M.elt ->
-                      Eliom_sessions.server_params ->
-                      'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?cancelled_content:(Eliom_sessions.server_params ->
-                          Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?error_content:(Eliom_sessions.server_params ->
-                      (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      post_params:('j, [ `WithoutSuffix ], 'k) Eliom_parameters.params_type ->
-      next:(('h ->
-             Eliom_sessions.server_params ->
-             'e -> 'l * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-            'g ->
-            Eliom_sessions.server_params ->
-            ('e, 'm, [< Eliom_services.post_service_kind ],
-             [< Eliom_services.suff ], 'n,
-             'i *
-             [< Submit.t Eliom_parameters.setoneradio ]
-             Eliom_parameters.param_name, [< Eliom_services.registrable ])
-            Eliom_services.service) *
-           ('h ->
-            Eliom_sessions.server_params ->
-            'e -> 'l option * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      unit ->
-      (('o ->
-        Eliom_sessions.server_params ->
-        'a -> 'j * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-       'o ->
-       Eliom_sessions.server_params ->
-       ('a, 'j * Submit.t,
-        [> `Attached of
-             [> `Internal of [> `Coservice ] * [> `Post ] ]
-             Eliom_services.a_s ],
-        'b, 'c, 'k * [ `One of Submit.t ] Eliom_parameters.param_name,
-        [> `Registrable ])
-       Eliom_services.service) *
-      ('d ->
-       Eliom_sessions.server_params ->
-       'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
+	val make_skippable:
+		common:('a, unit,
+		[ `Attached of
+		[ `Internal of [ `Coservice | `Service ] * [ `Get ] ]
+		Eliom_services.a_s ],
+		[< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
+		Eliom_services.service *
+		(Eliom_sessions.server_params ->
+		Eliom_predefmod.Xhtml.page Lwt.t) *
+		(Eliom_sessions.server_params ->
+		(string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		carrier:(carried:'d ->
+		Eliom_sessions.server_params ->
+		'e -> 'f -> [< `Proceed of 'g | `Cancel | `Skip of 'h ]) ->
+		form_maker:(carried:'d ->
+		carry:'g -> 'i -> Xhtmltypes.form_content XHTML.M.elt list) ->
+		normal_content:(carried:'d ->
+		carry:'g ->
+		form:[> Xhtmltypes.form ] XHTML.M.elt ->
+		Eliom_sessions.server_params ->
+		'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		?cancelled_content:(Eliom_sessions.server_params ->
+		Eliom_predefmod.Xhtml.page Lwt.t) ->
+		?error_content:(Eliom_sessions.server_params ->
+		(string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		post_params:('j, [ `WithoutSuffix ], 'k) Eliom_parameters.params_type ->
+		next:(('h ->
+		Eliom_sessions.server_params ->
+		'e -> 'l * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		'g ->
+		Eliom_sessions.server_params ->
+		('e, 'm, [< Eliom_services.post_service_kind ],
+		[< Eliom_services.suff ], 'n,
+		'i *
+		[< Submit.t Eliom_parameters.setoneradio ]
+		Eliom_parameters.param_name, [< Eliom_services.registrable ])
+		Eliom_services.service) *
+		('h ->
+		Eliom_sessions.server_params ->
+		'e -> 'l option * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		unit ->
+		(('o ->
+		Eliom_sessions.server_params ->
+		'a -> 'j * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		'o ->
+		Eliom_sessions.server_params ->
+		('a, 'j * Submit.t,
+		[> `Attached of
+		[> `Internal of [> `Coservice ] * [> `Post ] ]
+		Eliom_services.a_s ],
+		'b, 'c, 'k * [ `One of Submit.t ] Eliom_parameters.param_name,
+		[> `Registrable ])
+		Eliom_services.service) *
+		('d ->
+		Eliom_sessions.server_params ->
+		'e -> 'f * Submit.t -> Eliom_predefmod.Xhtml.page Lwt.t)
 
 
-    val make_first :
-      ?sp:Eliom_sessions.server_params ->
-      common:('a, unit,
-              [ `Attached of
-                  [ `Internal of Eliom_services.servcoserv * [ `Get ] ]
-                  Eliom_services.a_s ],
-              [< Eliom_services.suff ], 'b, unit, [ `Registrable ])
-             Eliom_services.service * 'c *
-             (Eliom_sessions.server_params ->
-              'd list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(carried:unit ->
-               Eliom_sessions.server_params ->
-               'a -> unit -> [< `Proceed of 'e | `Cancel ]) ->
-      form_maker:(carried:unit ->
-                  carry:'e -> 'f -> Xhtmltypes.form_content XHTML.M.elt list) ->
-      normal_content:(carried:unit ->
-                      carry:'e ->
-                      form:[> Xhtmltypes.form ] XHTML.M.elt ->
-                      Eliom_sessions.server_params ->
-                      'a -> unit -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?error_content:(Eliom_sessions.server_params ->
-                      'd list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      next:('g ->
-            'e ->
-            Eliom_sessions.server_params ->
-            ('a, 'h, [< Eliom_services.post_service_kind ],
-             [< Eliom_services.suff ], 'i,
-             'f *
-             [< Submit.t Eliom_parameters.setoneradio ]
-             Eliom_parameters.param_name, [< Eliom_services.registrable ])
-            Eliom_services.service) *
-           'g ->
-      unit -> unit
+	val make_first:
+		?sp:Eliom_sessions.server_params ->
+		common:('a, unit,
+		[ `Attached of
+		[ `Internal of Eliom_services.servcoserv * [ `Get ] ]
+		Eliom_services.a_s ],
+		[< Eliom_services.suff ], 'b, unit, [ `Registrable ])
+		Eliom_services.service * 'c *
+		(Eliom_sessions.server_params ->
+		'd list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		carrier:(carried:unit ->
+		Eliom_sessions.server_params ->
+		'a -> unit -> [< `Proceed of 'e | `Cancel ]) ->
+		form_maker:(carried:unit ->
+		carry:'e -> 'f -> Xhtmltypes.form_content XHTML.M.elt list) ->
+		normal_content:(carried:unit ->
+		carry:'e ->
+		form:[> Xhtmltypes.form ] XHTML.M.elt ->
+		Eliom_sessions.server_params ->
+		'a -> unit -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		?error_content:(Eliom_sessions.server_params ->
+		'd list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		next:('g ->
+		'e ->
+		Eliom_sessions.server_params ->
+		('a, 'h, [< Eliom_services.post_service_kind ],
+		[< Eliom_services.suff ], 'i,
+		'f *
+		[< Submit.t Eliom_parameters.setoneradio ]
+		Eliom_parameters.param_name, [< Eliom_services.registrable ])
+		Eliom_services.service) *
+		'g ->
+		unit -> unit
 
 
-    val make_first_with_post :
-      common:('a, unit,
-              [ `Attached of
-                  [ `Internal of Eliom_services.servcoserv * [ `Get ] ]
-                  Eliom_services.a_s ],
-              [< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
-             Eliom_services.service * 'd *
-             (Eliom_sessions.server_params ->
-              'e list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(carried:unit ->
-               Eliom_sessions.server_params ->
-               'a -> 'f -> [< `Proceed of 'g | `Cancel ]) ->
-      form_maker:(carried:unit ->
-                  carry:'g -> 'h -> Xhtmltypes.form_content XHTML.M.elt list) ->
-      normal_content:(carried:unit ->
-                      carry:'g ->
-                      form:[> Xhtmltypes.form ] XHTML.M.elt ->
-                      Eliom_sessions.server_params ->
-                      'a -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      fallback_content:(Eliom_sessions.server_params ->
-                        'a -> unit -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      post_params:('f, [ `WithoutSuffix ], 'i) Eliom_parameters.params_type ->
-      ?error_content:(Eliom_sessions.server_params ->
-                      'e list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      next:('j ->
-            'g ->
-            Eliom_sessions.server_params ->
-            ('a, 'k, [< Eliom_services.post_service_kind ],
-             [< Eliom_services.suff ], 'l,
-             'h *
-             [< Submit.t Eliom_parameters.setoneradio ]
-             Eliom_parameters.param_name, [< Eliom_services.registrable ])
-            Eliom_services.service) *
-           'j ->
-      unit ->
-      ('a, 'f,
-       [> `Attached of
-            [> `Internal of Eliom_services.servcoserv * [> `Post ] ]
-            Eliom_services.a_s ],
-       'b, 'c, 'i, [> `Registrable ])
-      Eliom_services.service
+	val make_first_with_post :
+		common:('a, unit,
+		[ `Attached of
+		[ `Internal of Eliom_services.servcoserv * [ `Get ] ]
+		Eliom_services.a_s ],
+		[< Eliom_services.suff ] as 'b, 'c, unit, [ `Registrable ])
+		Eliom_services.service * 'd *
+		(Eliom_sessions.server_params ->
+		'e list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		carrier:(carried:unit ->
+		Eliom_sessions.server_params ->
+		'a -> 'f -> [< `Proceed of 'g | `Cancel ]) ->
+		form_maker:(carried:unit ->
+		carry:'g -> 'h -> Xhtmltypes.form_content XHTML.M.elt list) ->
+		normal_content:(carried:unit ->
+		carry:'g ->
+		form:[> Xhtmltypes.form ] XHTML.M.elt ->
+		Eliom_sessions.server_params ->
+		'a -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		fallback_content:(Eliom_sessions.server_params ->
+		'a -> unit -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		post_params:('f, [ `WithoutSuffix ], 'i) Eliom_parameters.params_type ->
+		?error_content:(Eliom_sessions.server_params ->
+		'e list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+		next:('j ->
+		'g ->
+		Eliom_sessions.server_params ->
+		('a, 'k, [< Eliom_services.post_service_kind ],
+		[< Eliom_services.suff ], 'l,
+		'h *
+		[< Submit.t Eliom_parameters.setoneradio ]
+		Eliom_parameters.param_name, [< Eliom_services.registrable ])
+		Eliom_services.service) *
+		'j ->
+		unit ->
+		('a, 'f,
+		[> `Attached of
+		[> `Internal of Eliom_services.servcoserv * [> `Post ] ]
+		Eliom_services.a_s ],
+		'b, 'c, 'i, [> `Registrable ])
+		Eliom_services.service
 end
 

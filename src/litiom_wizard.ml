@@ -66,18 +66,31 @@ end
 
 
 (********************************************************************************)
-(* Carriers.									*)
+(* Carriers module.								*)
 (********************************************************************************)
 
+(**	This module defines a number of predefined carrier functions.
+*)
 module Carriers =
 struct
+	(**	Carries none of the parameters to the subsequent step.
+	*)
 	let none ~carried sp gp pp = `Proceed ()
 
+	(**	Carries only the previously carried value to the subsequent step,
+		discarding the present parameter.
+	*)
 	let past ~carried sp gp pp = `Proceed carried
 
+	(**	Carries only the present parameter to the subsequent step,
+		discarding the previously carried value.
+	*)
 	let present ~carried sp gp pp = `Proceed pp
 
-	let all ~carried sp gp pp = `Proceed (carried, pp)
+	(**	Carries a pair of both the previously carried value and
+		the present parameter to the subsequent step.
+	*)
+	let both ~carried sp gp pp = `Proceed (carried, pp)
 end
 
 
@@ -85,8 +98,12 @@ end
 (* Steps module.								*)
 (********************************************************************************)
 
+(**	This module provides a fairly low-level interface to the creation of wizards.
+*)
 module Steps =
 struct
+	(**	Error handler common to all steps.
+	*)
 	let error_handler ~cancelled_content ~error_content = fun sp exc_list ->
 		Eliom_sessions.get_post_params ~sp >>= fun params ->
 		let maybe_submit =
@@ -102,11 +119,15 @@ struct
 			| Some Submit.Cancel    -> cancelled_content sp
 
 
+	(**	Declares the common aspects to all wizard steps.
+	*)
 	let make_common ~path ~get_params ~cancelled_content ~error_content () =
 		let fallback = Eliom_services.new_service ~path ~get_params ()
 		in (fallback, cancelled_content, error_content)
 
 
+	(**	Returns the common elements to all wizard steps.
+	*)
 	let get_common ~common ?cancelled_content ?error_content () =
 		let (fallback, default_cancelled_content, default_error_content) = common in
 		let cancelled_content = match cancelled_content with
@@ -118,6 +139,8 @@ struct
 		in ((fallback : ('a, unit, [ `Attached of [ `Internal of [ `Coservice | `Service ] * [ `Get ] ] Eliom_services.a_s ], 'b, 'c, unit, [ `Registrable ]) Eliom_services.service :> ('get,unit, [> `Attached of [> `Internal of [> `Service ] * [> `Get] ] Eliom_services.a_s ], 'tipo,'gn, unit, [> `Registrable ]) Eliom_services.service), cancelled_content, error_content)
 
 
+	(**	Declares the final step of the wizard.
+	*)
 	let make_last ~common ~normal_content ?cancelled_content ?error_content ~post_params () =
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carried sp gp (pp, submit_param) =
@@ -134,6 +157,8 @@ struct
 		in (register, handler)
 
 
+	(**	Creates a non-skippable, intermediate (ie, neither initial nor final) step of the wizard.
+	*)
 	let make_intermediate ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carried sp gp (pp, submit_param) = match submit_param with
@@ -161,6 +186,8 @@ struct
 		in (register, handler)
 
 
+	(**	Creates a skippable, intermediate (ie, neither initial nor final) step of the wizard.
+	*)
 	let make_skippable ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carried sp gp (pp, submit_param) = match submit_param with
@@ -193,6 +220,9 @@ struct
 		in (register, handler)
 
 
+	(**	Creates the handler for the first step (usable by first steps both with and without
+		POST parameters).
+	*)
 	let make_first_handler ~common ~carrier ~form_maker ~normal_content ?error_content ~next () =
 		let (_, _, error_content) = get_common ~common ?error_content () in
 		let handler sp gp pp =
@@ -211,12 +241,16 @@ struct
 		in handler
 
 
+	(**	Creates the initial step for a wizard, without any POST parameters.
+	*)
 	let make_first ?sp ~common ~carrier ~form_maker ~normal_content ?error_content ~next () =
 		let (fallback, _, _) = get_common ~common () in
 		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?error_content ~next ()
 		in Eliom_predefmod.Xhtml.register ?sp ~service:fallback handler
 
 
+	(**	Creates the initial step for a wizard, with POST parameters.
+	*)
 	let make_first_with_post ~common ~carrier ~form_maker ~normal_content ~fallback_content ~post_params ?error_content ~next () =
 		let (fallback, _, _) = get_common ~common () in
 		let () = Eliom_predefmod.Xhtml.register ~service:fallback fallback_content in

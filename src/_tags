@@ -1,1 +1,4 @@
 true: pkg_threads, pkg_lwt, pkg_ocsigen
+
+<litiom_blocks.mli>: litiom_blocks
+<litiom_wizard.mli>: litiom_wizard

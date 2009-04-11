@@ -10,7 +10,7 @@ LIB_BUILD_DIR=$(SRC_DIR)/_build
 LIB_TARGETS=litiom.cma litiom.cmxa litiom.a litiom_blocks.cmi litiom_wizard.cmi
 LIB_FQTARGETS=$(foreach TARGET, $(LIB_TARGETS), $(LIB_BUILD_DIR)/$(TARGET))
 
-OCAMLBUILS_OPTS=
+OCAMLBUILD_OPTS=-classic-display
 
 #
 # Rule
@@ -19,7 +19,7 @@ OCAMLBUILS_OPTS=
 all: lib
 
 lib:
-	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILS_OPTS) $(LIB_TARGETS)
+	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILD_OPTS) $(LIB_TARGETS)
 
 apidoc: lib
 	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILD_OPTS) lambdoc.docdir/index.html
