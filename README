@@ -8,23 +8,42 @@
 1. Overview
 ===========
 
-
+Litiom aims to complement Eliom, the web programming framework part of the
+Ocsigen project [1].  Litiom is basically a collection of modules offering
+high-level constructs for web programming.  Presently, the library contains
+the Litiom_blocks and the Litiom_wizard modules.  Litiom_blocks uses the
+arrow formalism to build a simple algebra of Lwt functions plumbed together.
+It allows for simple composition of functions, forking & joining, and placing
+the result of a list of computations inside containers.  The end is to enable
+the construction of page fragments via the composition of simple building
+blocks.  As for Litiom_wizard, it offers routines aiming to automate and
+simplify the construction of wizard-like interactions in websites.
 
 
 2. Dependencies
 ===============
 
+Litiom depends on Lwt and Ocsigen.
+
 
 3. Building and installing
 ==========================
 
+Typing "make" suffices to build the Litiom library.  The build system
+relies on Ocamlbuild, and therefore must be used with Ocaml 3.10 or newer.
+After building, type "make install" to perform a findlib installation, and
+"make apidoc" to build the API documentation.
+
+
 4. License
 ==========
 
-Lambdoc is distributed under the terms of the GNU GPL version 2.
+Litiom is distributed under the terms of the GNU GPL version 2.
 See LICENSE file for full license text.
 
 
 References
 ==========
+
+[1] http://www.ocsigen.org/
 
