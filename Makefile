@@ -23,6 +23,7 @@ lib:
 
 apidoc: lib
 	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILD_OPTS) lambdoc.docdir/index.html
+	cp $(SRC_DIR)/apidoc/style.css $(SRC_DIR)/lambdoc.docdir
 
 install: lib
 	ocamlfind install $(PKG_NAME) $(SRC_DIR)/META $(LIB_FQTARGETS)
