@@ -1,13 +1,7 @@
 (********************************************************************************)
 (**	Litiom_blocks module.
 
-	Uses the arrow formalism to build a simple algebra of Lwt functions
-	plumbed together.  It allows, among others, for simple composition of
-	functions, forking & joining, and placing the result of a list of
-	computations inside containers.  The end is to enable the construction
-	of page fragments via the composition of simple building blocks.
-
-	Copyright (c) 2008 Dario Teixeira (dario.teixeira\@yahoo.com)
+	Copyright (c) 2009 Dario Teixeira (dario.teixeira\@yahoo.com)
 
 	This software is distributed under the terms of the GNU GPL version 2.
 	See LICENSE file for full license text.
