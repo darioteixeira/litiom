@@ -1,5 +1,5 @@
 (********************************************************************************)
-(**	Litiom_blocks module.
+(*	Litiom_blocks implementation.
 
 	Copyright (c) 2009 Dario Teixeira (dario.teixeira\@yahoo.com)
 

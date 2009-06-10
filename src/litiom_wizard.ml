@@ -1,5 +1,5 @@
 (********************************************************************************)
-(**	Litiom_wizard module.
+(*	Litiom_wizard implementation.
 
 	Copyright (c) 2009 Dario Teixeira (dario.teixeira\@yahoo.com)
 
@@ -49,17 +49,8 @@ struct
 	let make_controls enter_submit =
 		fieldset ~a:[a_class ["wizard_buttons"]]
 			[
-			Eliom_predefmod.Xhtml.user_type_input
-				~input_type:`Submit
-				~name:enter_submit
-				~value:Cancel
-				to_string;
-
-			Eliom_predefmod.Xhtml.user_type_input
-				~input_type:`Submit
-				~name:enter_submit
-				~value:Proceed
-				to_string
+			Eliom_predefmod.Xhtml.user_type_input ~input_type:`Submit ~name:enter_submit ~value:Cancel to_string;
+			Eliom_predefmod.Xhtml.user_type_input ~input_type:`Submit ~name:enter_submit ~value:Proceed to_string
 			]
 
 end
@@ -168,9 +159,11 @@ struct
 					| `Proceed carry ->
 						let (next_register, next_handler) = next in
 						let make_form (enter_next, enter_submit) =
-							(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
+							form_maker ~carried ~carry enter_next >>= fun fieldsets ->
+							Lwt.return (fieldsets @ [Submit.make_controls enter_submit]) in
 						let next_service = next_register next_handler carry sp in
-						let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
+						Eliom_predefmod.Xhtml.lwt_post_form ~service:next_service ~sp make_form gp >>= fun form ->
+						let form = (form : Xhtmltypes.form XHTML.M.elt :> [> Xhtmltypes.form ] XHTML.M.elt)
 						in normal_content ~carried ~carry ~form sp gp pp
 					| `Cancel ->
 						error_content sp [])
@@ -202,9 +195,11 @@ struct
 						let real_next_handler carry sp gp (pp, submit_param) =
 							next_handler carry sp gp (Some pp, submit_param) in
 						let make_form (enter_next, enter_submit) =
-							(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
+							form_maker ~carried ~carry enter_next >>= fun fieldsets ->
+							Lwt.return (fieldsets @ [Submit.make_controls enter_submit]) in
 						let next_service = next_register real_next_handler carry sp in
-						let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
+						Eliom_predefmod.Xhtml.lwt_post_form ~service:next_service ~sp make_form gp >>= fun form ->
+						let form = (form : Xhtmltypes.form XHTML.M.elt :> [> Xhtmltypes.form ] XHTML.M.elt)
 						in normal_content ~carried ~carry ~form sp gp pp
 					| `Cancel ->
 						error_content sp [])
@@ -232,9 +227,11 @@ struct
 				| `Proceed carry ->
 					let (next_register, next_handler) = next in
 					let make_form (enter_next, enter_submit) =
-						(form_maker ~carried ~carry enter_next) @ [Submit.make_controls enter_submit] in
+						form_maker ~carried ~carry enter_next >>= fun fieldsets ->
+						Lwt.return (fieldsets @ [Submit.make_controls enter_submit]) in
 					let next_service = next_register next_handler carry sp in
-					let form = Eliom_predefmod.Xhtml.post_form next_service sp make_form gp
+					Eliom_predefmod.Xhtml.lwt_post_form ~service:next_service ~sp make_form gp >>= fun form ->
+					let form = (form : Xhtmltypes.form XHTML.M.elt :> [> Xhtmltypes.form ] XHTML.M.elt)
 					in normal_content ~carried ~carry ~form sp gp pp
 				| `Cancel ->
 					error_content sp []

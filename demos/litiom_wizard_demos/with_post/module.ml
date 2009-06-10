@@ -53,13 +53,14 @@ let step2 =
 	let carrier ~carried sp () x =
 		`Proceed x in
 	let form_maker ~carried ~carry enter_y =
-		[
-		fieldset ~a:[a_class ["form_fields"]]
+		Lwt.return
 			[
-			label ~a:[a_for "enter_y"] [pcdata "Enter int Y:"];
-			Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_y"] ~input_type:`Text ~name:enter_y ();
-			]
-		] in
+			fieldset ~a:[a_class ["form_fields"]]
+				[
+				label ~a:[a_for "enter_y"] [pcdata "Enter int Y:"];
+				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_y"] ~input_type:`Text ~name:enter_y ();
+				]
+			] in
 	let normal_content ~carried ~carry ~form sp () x =
 		Lwt.return
 			(html
@@ -79,13 +80,14 @@ let step2 =
 
 let step1 =
 	let form_maker ~carried ~carry enter_x =
-		[
-		fieldset ~a:[a_class ["form_fields"]]
+		Lwt.return
 			[
-			label ~a:[a_for "enter_x"] [pcdata "Enter int X:"];
-			Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_x"] ~input_type:`Text ~name:enter_x ();
-			]
-		] in
+			fieldset ~a:[a_class ["form_fields"]]
+				[
+				label ~a:[a_for "enter_x"] [pcdata "Enter int X:"];
+				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_x"] ~input_type:`Text ~name:enter_x ();
+				]
+			] in
 	let normal_content ~carried ~carry ~form sp () pp =
 		Lwt.return
 			(html
