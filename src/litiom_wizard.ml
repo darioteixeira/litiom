@@ -66,22 +66,22 @@ module Carriers =
 struct
 	(**	Carries none of the parameters to the subsequent step.
 	*)
-	let none ~carry_in sp gp pp = `Proceed ()
+	let none ~carry_in sp gp pp = Lwt.return (`Proceed ())
 
 	(**	Carries only the previously carried value to the subsequent step,
 		discarding the present parameter.
 	*)
-	let past ~carry_in sp gp pp = `Proceed carry_in
+	let past ~carry_in sp gp pp = Lwt.return (`Proceed carry_in)
 
 	(**	Carries only the present parameter to the subsequent step,
 		discarding the previously carried value.
 	*)
-	let present ~carry_in sp gp pp = `Proceed pp
+	let present ~carry_in sp gp pp = Lwt.return (`Proceed pp)
 
 	(**	Carries a pair of both the previously carried value and
 		the present parameter to the subsequent step.
 	*)
-	let both ~carry_in sp gp pp = `Proceed (carry_in, pp)
+	let both ~carry_in sp gp pp = Lwt.return (`Proceed (carry_in, pp))
 end
 
 
@@ -154,8 +154,7 @@ struct
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carry_in sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
-				let result = carrier ~carry_in sp gp pp
-				in (match result with
+				(carrier ~carry_in sp gp pp >>= function
 					| `Proceed carry_out ->
 						let (next_register, next_handler) = next in
 						let make_form (enter_next, enter_submit) =
@@ -185,8 +184,7 @@ struct
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carry_in sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
-				let result = carrier ~carry_in sp gp pp
-				in (match result with
+				(carrier ~carry_in sp gp pp >>= function
 					| `Skip carry_out ->
 						let (_, next_handler) = next
 						in next_handler carry_out sp gp (None, Submit.Proceed)
@@ -222,8 +220,7 @@ struct
 		let (_, _, error_content) = get_common ~common ?error_content () in
 		let handler sp gp pp =
 			let carry_in = () in
-			let result = carrier ~carry_in sp gp pp
-			in match result with
+			carrier ~carry_in sp gp pp >>= function
 				| `Proceed carry_out ->
 					let (next_register, next_handler) = next in
 					let make_form (enter_next, enter_submit) =

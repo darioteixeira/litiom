@@ -51,9 +51,7 @@ let step4 =
 
 let step3 =
 	let carrier ~carry_in:x sp () y =
-		if x > y
-		then `Proceed (x, y)
-		else `Skip (x, y) in
+		Lwt.return (if x > y then `Proceed (x, y) else `Skip (x, y)) in
 	let form_maker ~carry_in ~carry_out enter_z =
 		Lwt.return
 			[

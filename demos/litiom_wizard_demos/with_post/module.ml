@@ -51,7 +51,7 @@ let step3 =
 
 let step2 =
 	let carrier ~carry_in sp () x =
-		`Proceed x in
+		Lwt.return (`Proceed x) in
 	let form_maker ~carry_in ~carry_out enter_y =
 		Lwt.return
 			[
