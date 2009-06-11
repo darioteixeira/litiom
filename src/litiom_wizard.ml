@@ -66,22 +66,22 @@ module Carriers =
 struct
 	(**	Carries none of the parameters to the subsequent step.
 	*)
-	let none ~carried sp gp pp = `Proceed ()
+	let none ~carry_in sp gp pp = `Proceed ()
 
 	(**	Carries only the previously carried value to the subsequent step,
 		discarding the present parameter.
 	*)
-	let past ~carried sp gp pp = `Proceed carried
+	let past ~carry_in sp gp pp = `Proceed carry_in
 
 	(**	Carries only the present parameter to the subsequent step,
 		discarding the previously carried value.
 	*)
-	let present ~carried sp gp pp = `Proceed pp
+	let present ~carry_in sp gp pp = `Proceed pp
 
 	(**	Carries a pair of both the previously carried value and
 		the present parameter to the subsequent step.
 	*)
-	let both ~carried sp gp pp = `Proceed (carried, pp)
+	let both ~carry_in sp gp pp = `Proceed (carry_in, pp)
 end
 
 
@@ -134,17 +134,17 @@ struct
 	*)
 	let make_last ~common ~normal_content ?cancelled_content ?error_content ~post_params () =
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
-		let handler carried sp gp (pp, submit_param) =
+		let handler carry_in sp gp (pp, submit_param) =
 			 match submit_param with
-				| Submit.Proceed	-> normal_content ~carried sp gp pp
+				| Submit.Proceed	-> normal_content ~carry_in sp gp pp
 				| Submit.Cancel		-> cancelled_content sp
-		and register handler carried sp =
+		and register handler carry_in sp =
 			Eliom_predefmod.Xhtml.register_new_post_coservice_for_session
 				~sp
 				~fallback
 				~post_params: (post_params ** Submit.param)
 				~error_handler: (error_handler ~cancelled_content ~error_content)
-				(handler carried)
+				(handler carry_in)
 		in (register, handler)
 
 
@@ -152,30 +152,30 @@ struct
 	*)
 	let make_intermediate ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
-		let handler carried sp gp (pp, submit_param) = match submit_param with
+		let handler carry_in sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
-				let result = carrier ~carried sp gp pp
+				let result = carrier ~carry_in sp gp pp
 				in (match result with
-					| `Proceed carry ->
+					| `Proceed carry_out ->
 						let (next_register, next_handler) = next in
 						let make_form (enter_next, enter_submit) =
-							form_maker ~carried ~carry enter_next >>= fun fieldsets ->
+							form_maker ~carry_in ~carry_out enter_next >>= fun fieldsets ->
 							Lwt.return (fieldsets @ [Submit.make_controls enter_submit]) in
-						let next_service = next_register next_handler carry sp in
+						let next_service = next_register next_handler carry_out sp in
 						Eliom_predefmod.Xhtml.lwt_post_form ~service:next_service ~sp make_form gp >>= fun form ->
 						let form = (form : Xhtmltypes.form XHTML.M.elt :> [> Xhtmltypes.form ] XHTML.M.elt)
-						in normal_content ~carried ~carry ~form sp gp pp
+						in normal_content ~carry_in ~carry_out ~form sp gp pp
 					| `Cancel ->
 						error_content sp [])
 			| Submit.Cancel ->
 				cancelled_content sp
-		and register handler carried sp =
+		and register handler carry_in sp =
 			Eliom_predefmod.Xhtml.register_new_post_coservice_for_session
 				~sp
 				~fallback
 				~post_params: (post_params ** Submit.param)
 				~error_handler: (error_handler ~cancelled_content ~error_content)
-				(handler carried)
+				(handler carry_in)
 		in (register, handler)
 
 
@@ -183,35 +183,35 @@ struct
 	*)
 	let make_skippable ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
 		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
-		let handler carried sp gp (pp, submit_param) = match submit_param with
+		let handler carry_in sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
-				let result = carrier ~carried sp gp pp
+				let result = carrier ~carry_in sp gp pp
 				in (match result with
-					| `Skip carry ->
+					| `Skip carry_out ->
 						let (_, next_handler) = next
-						in next_handler carry sp gp (None, Submit.Proceed)
-					| `Proceed carry ->
+						in next_handler carry_out sp gp (None, Submit.Proceed)
+					| `Proceed carry_out ->
 						let (next_register, next_handler) = next in
-						let real_next_handler carry sp gp (pp, submit_param) =
-							next_handler carry sp gp (Some pp, submit_param) in
+						let real_next_handler carry_out sp gp (pp, submit_param) =
+							next_handler carry_out sp gp (Some pp, submit_param) in
 						let make_form (enter_next, enter_submit) =
-							form_maker ~carried ~carry enter_next >>= fun fieldsets ->
+							form_maker ~carry_in ~carry_out enter_next >>= fun fieldsets ->
 							Lwt.return (fieldsets @ [Submit.make_controls enter_submit]) in
-						let next_service = next_register real_next_handler carry sp in
+						let next_service = next_register real_next_handler carry_out sp in
 						Eliom_predefmod.Xhtml.lwt_post_form ~service:next_service ~sp make_form gp >>= fun form ->
 						let form = (form : Xhtmltypes.form XHTML.M.elt :> [> Xhtmltypes.form ] XHTML.M.elt)
-						in normal_content ~carried ~carry ~form sp gp pp
+						in normal_content ~carry_in ~carry_out ~form sp gp pp
 					| `Cancel ->
 						error_content sp [])
 			| Submit.Cancel ->
 				cancelled_content sp
-		and register handler carried sp =
+		and register handler carry_in sp =
 			Eliom_predefmod.Xhtml.register_new_post_coservice_for_session
 				~sp
 				~fallback
 				~post_params: (post_params ** Submit.param)
 				~error_handler: (error_handler ~cancelled_content ~error_content)
-				(handler carried)
+				(handler carry_in)
 		in (register, handler)
 
 
@@ -221,18 +221,18 @@ struct
 	let make_first_handler ~common ~carrier ~form_maker ~normal_content ?error_content ~next () =
 		let (_, _, error_content) = get_common ~common ?error_content () in
 		let handler sp gp pp =
-			let carried = () in
-			let result = carrier ~carried sp gp pp
+			let carry_in = () in
+			let result = carrier ~carry_in sp gp pp
 			in match result with
-				| `Proceed carry ->
+				| `Proceed carry_out ->
 					let (next_register, next_handler) = next in
 					let make_form (enter_next, enter_submit) =
-						form_maker ~carried ~carry enter_next >>= fun fieldsets ->
+						form_maker ~carry_in ~carry_out enter_next >>= fun fieldsets ->
 						Lwt.return (fieldsets @ [Submit.make_controls enter_submit]) in
-					let next_service = next_register next_handler carry sp in
+					let next_service = next_register next_handler carry_out sp in
 					Eliom_predefmod.Xhtml.lwt_post_form ~service:next_service ~sp make_form gp >>= fun form ->
 					let form = (form : Xhtmltypes.form XHTML.M.elt :> [> Xhtmltypes.form ] XHTML.M.elt)
-					in normal_content ~carried ~carry ~form sp gp pp
+					in normal_content ~carry_in ~carry_out ~form sp gp pp
 				| `Cancel ->
 					error_content sp []
 		in handler

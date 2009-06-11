@@ -31,7 +31,7 @@ let common =
 (********************************************************************************)
 
 let step3 =
-	let normal_content ~carried:x sp () y =
+	let normal_content ~carry_in:x sp () y =
 		Lwt.return
 			(html
 			(head (title (pcdata "Wizard step 3")) [])
@@ -51,9 +51,9 @@ let step3 =
 (********************************************************************************)
 
 let step2 =
-	let carrier ~carried sp () x =
+	let carrier ~carry_in sp () x =
 		`Proceed x in
-	let form_maker ~carried ~carry enter_y =
+	let form_maker ~carry_in ~carry_out enter_y =
 		Lwt.return
 			[
 			fieldset ~a:[a_class ["form_fields"]]
@@ -62,7 +62,7 @@ let step2 =
 				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_y"] ~input_type:`Text ~name:enter_y ();
 				]
 			] in
-	let normal_content ~carried ~carry ~form sp () x =
+	let normal_content ~carry_in ~carry_out ~form sp () x =
 		Lwt.return
 			(html
 			(head (title (pcdata "Wizard step 2")) [])
@@ -80,7 +80,7 @@ let step2 =
 (********************************************************************************)
 
 let step1 =
-	let form_maker ~carried ~carry enter_x =
+	let form_maker ~carry_in ~carry_out enter_x =
 		Lwt.return
 			[
 			fieldset ~a:[a_class ["form_fields"]]
@@ -89,7 +89,7 @@ let step1 =
 				Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_x"] ~input_type:`Text ~name:enter_x ();
 				]
 			] in
-	let normal_content ~carried ~carry ~form sp () () =
+	let normal_content ~carry_in ~carry_out ~form sp () () =
 		Lwt.return
 			(html
 			(head (title (pcdata "Wizard step 1")) [])

@@ -124,13 +124,13 @@
 	to use the default ones.
 
 	The [normal_content] resembles a normal [Eliom] handler, but takes extra named
-	parameters.  For the last wizard step, only the extra parameter [carried] is given.
-	This parameter contains whatever value was carried out from the previous step.
+	parameters.  For the last wizard step, only the extra parameter [carry_in] is given.
+	This parameter contains whatever value was carried over from the previous step.
 	In this case, the value [x] is carried.
 
 	{v
 	let step3 =
-		let normal_content ~carried:x sp () y =
+		let normal_content ~carry_in:x sp () y =
 			Lwt.return
 				(html
 				(head (title (pcdata "Wizard step 3")) [])
@@ -160,28 +160,28 @@
 	given to the current step, decides whether the wizard should continue as normal, fail
 	altogether, or if the current step is skippable, be skipped.  In the first and last
 	cases, the value to be carried over to the next step must also be provided.  The return
-	values are respectively [`Proceed carry], [`Cancel], and [`Skip carry].  (Remember that
-	during the declaration of [step3], we stated that the value [x] was carried over from
-	the previous step.  Therefore, the carrier for [step2] must return [`Proceed x]).
+	values are respectively [`Proceed carry_out], [`Cancel], and [`Skip carry_out].  (Remember
+	that during the declaration of [step3], we stated that the value [x] was carried over
+	from the previous step.  Therefore, the carrier for [step2] must return [`Proceed x]).
 
 	The [form_maker] is a function that creates the form for the next step.  The approach
 	is similar to that used by [Eliom.lwt_post_form], with the difference that [form_maker]
-	takes two additional named parameters: [carried] with the value carried over from the
-	previous step, and [carry] with the result to be carried over to the next step, as
+	takes two additional named parameters: [carry_in] with the value carried over from the
+	previous step, and [carry_out] with the result to be carried over to the next step, as
 	returned by the [carrier] function.  Note that the "Cancel" and "Proceed" buttons
 	that animate the wizard are automatically added, and you do not need to worry about
 	those.
 
 	The [normal_content] function is similar to the one described for the final step,
 	with the difference that in the initial and intermediate steps this function takes
-	two additional parameters: [carry] is the value to be carried over to the next step,
-	and [form] is the corresponding generated form.
+	two additional parameters: [carry_out] is the value to be carried over to the next
+	step, and [form] is the corresponding generated form.
 
 	{v
 	let step2 =
-		let carrier ~carried sp () x =
+		let carrier ~carry_in sp () x =
 			`Proceed x in
-		let form_maker ~carried ~carry enter_y =
+		let form_maker ~carry_in ~carry_out enter_y =
 			Lwt.return
 				[
 				fieldset ~a:[a_class ["form_fields"]]
@@ -190,7 +190,7 @@
 					Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_y"] ~input_type:`Text ~name:enter_y ();
 					]
 				] in
-		let normal_content ~carried ~carry ~form sp () x =
+		let normal_content ~carry_in ~carry_out ~form sp () x =
 			Lwt.return
 				(html
 				(head (title (pcdata "Wizard step 2")) [])
@@ -214,7 +214,7 @@
 
 	{v
 	let step1 =
-		let form_maker ~carried ~carry enter_x =
+		let form_maker ~carry_in ~carry_out enter_x =
 			Lwt.return
 				[
 				fieldset ~a:[a_class ["form_fields"]]
@@ -223,7 +223,7 @@
 					Eliom_predefmod.Xhtml.int_input ~a:[a_id "enter_x"] ~input_type:`Text ~name:enter_x ();
 					]
 				] in
-		let normal_content ~carried ~carry ~form sp () () =
+		let normal_content ~carry_in ~carry_out ~form sp () () =
 			Lwt.return
 				(html
 				(head (title (pcdata "Wizard step 1")) [])
@@ -272,10 +272,10 @@ module Submit : SUBMIT
 
 module Carriers:
 sig
-	val none: carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of unit ]
-	val past: carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a ]
-	val present: carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'd ]
-	val both: carried:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a * 'd ]
+	val none: carry_in:'a -> 'b -> 'c -> 'd -> [> `Proceed of unit ]
+	val past: carry_in:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a ]
+	val present: carry_in:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'd ]
+	val both: carry_in:'a -> 'b -> 'c -> 'd -> [> `Proceed of 'a * 'd ]
 end
 
 
@@ -328,7 +328,7 @@ module Steps :
               Eliom_predefmod.Xhtml.page Lwt.t) *
              (Eliom_sessions.server_params ->
               (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      normal_content:(carried:'d ->
+      normal_content:(carry_in:'d ->
                       Eliom_sessions.server_params ->
                       'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       ?cancelled_content:(Eliom_sessions.server_params ->
@@ -363,14 +363,14 @@ module Steps :
               Eliom_predefmod.Xhtml.page Lwt.t) *
              (Eliom_sessions.server_params ->
               (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(carried:'d ->
+      carrier:(carry_in:'d ->
                Eliom_sessions.server_params ->
                'e -> 'f -> [< `Cancel | `Proceed of 'g ]) ->
-      form_maker:(carried:'d ->
-                  carry:'g ->
+      form_maker:(carry_in:'d ->
+                  carry_out:'g ->
                   'h -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
-      normal_content:(carried:'d ->
-                      carry:'g ->
+      normal_content:(carry_in:'d ->
+                      carry_out:'g ->
                       form:[> Xhtmltypes.form ] XHTML.M.elt ->
                       Eliom_sessions.server_params ->
                       'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
@@ -416,14 +416,14 @@ module Steps :
               Eliom_predefmod.Xhtml.page Lwt.t) *
              (Eliom_sessions.server_params ->
               (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(carried:'d ->
+      carrier:(carry_in:'d ->
                Eliom_sessions.server_params ->
                'e -> 'f -> [< `Cancel | `Proceed of 'g | `Skip of 'h ]) ->
-      form_maker:(carried:'d ->
-                  carry:'g ->
+      form_maker:(carry_in:'d ->
+                  carry_out:'g ->
                   'i -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
-      normal_content:(carried:'d ->
-                      carry:'g ->
+      normal_content:(carry_in:'d ->
+                      carry_out:'g ->
                       form:[> Xhtmltypes.form ] XHTML.M.elt ->
                       Eliom_sessions.server_params ->
                       'e -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
@@ -470,14 +470,14 @@ module Steps :
               'b, 'c, unit, [ `Registrable ])
              Eliom_services.service * 'd *
              (Eliom_sessions.server_params -> 'e list -> 'f Lwt.t) ->
-      carrier:(carried:unit ->
+      carrier:(carry_in:unit ->
                Eliom_sessions.server_params ->
                'g -> 'h -> [< `Cancel | `Proceed of 'i ]) ->
-      form_maker:(carried:unit ->
-                  carry:'i ->
+      form_maker:(carry_in:unit ->
+                  carry_out:'i ->
                   'j -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
-      normal_content:(carried:unit ->
-                      carry:'i ->
+      normal_content:(carry_in:unit ->
+                      carry_out:'i ->
                       form:[> Xhtmltypes.form ] XHTML.M.elt ->
                       Eliom_sessions.server_params -> 'g -> 'h -> 'f Lwt.t) ->
       ?error_content:(Eliom_sessions.server_params -> 'e list -> 'f Lwt.t) ->
@@ -502,14 +502,14 @@ module Steps :
              Eliom_services.service * 'c *
              (Eliom_sessions.server_params ->
               'd list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(carried:unit ->
+      carrier:(carry_in:unit ->
                Eliom_sessions.server_params ->
                'a -> unit -> [< `Cancel | `Proceed of 'e ]) ->
-      form_maker:(carried:unit ->
-                  carry:'e ->
+      form_maker:(carry_in:unit ->
+                  carry_out:'e ->
                   'f -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
-      normal_content:(carried:unit ->
-                      carry:'e ->
+      normal_content:(carry_in:unit ->
+                      carry_out:'e ->
                       form:[> Xhtmltypes.form ] XHTML.M.elt ->
                       Eliom_sessions.server_params ->
                       'a -> unit -> Eliom_predefmod.Xhtml.page Lwt.t) ->
@@ -535,14 +535,14 @@ module Steps :
              Eliom_services.service * 'd *
              (Eliom_sessions.server_params ->
               'e list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      carrier:(carried:unit ->
+      carrier:(carry_in:unit ->
                Eliom_sessions.server_params ->
                'a -> 'f -> [< `Cancel | `Proceed of 'g ]) ->
-      form_maker:(carried:unit ->
-                  carry:'g ->
+      form_maker:(carry_in:unit ->
+                  carry_out:'g ->
                   'h -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
-      normal_content:(carried:unit ->
-                      carry:'g ->
+      normal_content:(carry_in:unit ->
+                      carry_out:'g ->
                       form:[> Xhtmltypes.form ] XHTML.M.elt ->
                       Eliom_sessions.server_params ->
                       'a -> 'f -> Eliom_predefmod.Xhtml.page Lwt.t) ->
