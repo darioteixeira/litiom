@@ -9,28 +9,16 @@ open Litiom_wizard
 (********************************************************************************)
 
 let common =
-	let cancelled_content sp =
-		Lwt.return
-			(html
-			(head (title (pcdata "Wizard cancelled")) [])
-			(body [p [pcdata "You cancelled!"]]))
-	and error_content sp exc_list =
-		Lwt.return
-			(html
-			(head (title (pcdata "Wizard error")) [])
-			(body [p [pcdata "There was an error!"]]))
-	in Steps.make_common
+	Steps.make_common
 		~path: [""]
 		~get_params: Eliom_parameters.unit
-		~cancelled_content
-		~error_content
 		()
 
 
 (********************************************************************************)
 
 let step4 =
-	let normal_content ~carry_in:(x, y) sp () maybe_z =
+	let normal_content ~carry_in:(x, y) ~carry_out sp () maybe_z =
 		Lwt.return
 			(html
 			(head (title (pcdata "Wizard step 4")) [])
@@ -42,6 +30,7 @@ let step4 =
 				]))
 	in Steps.make_last
 		~common
+		~carrier: Carriers.none
 		~normal_content
 		~post_params: (Eliom_parameters.int "z")
 		()

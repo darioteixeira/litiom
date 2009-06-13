@@ -20,18 +20,26 @@ let common =
 			(html
 			(head (title (pcdata "Wizard error")) [])
 			(body [p [pcdata "There was an error!"]]))
+	and failed_content sp exc =
+		Lwt.return
+			(html
+			(head (title (pcdata "Wizard failed")) [])
+			(body [p [pcdata "There was an exception!"]]))
 	in Steps.make_common
 		~path: [""]
 		~get_params: Eliom_parameters.unit
 		~cancelled_content
 		~error_content
+		~failed_content
 		()
 
 
 (********************************************************************************)
 
 let step3 =
-	let normal_content ~carry_in:x sp () y =
+	let carrier ~carry_in sp () _ =
+		Lwt.return (`Proceed ()) in
+	let normal_content ~carry_in:x ~carry_out sp () y =
 		Lwt.return
 			(html
 			(head (title (pcdata "Wizard step 3")) [])
@@ -43,6 +51,7 @@ let step3 =
 				]))
 	in Steps.make_last
 		~common
+		~carrier
 		~normal_content
 		~post_params: (Eliom_parameters.int "y")
 		()
