@@ -17,8 +17,8 @@ open Eliom_parameters
 (* Exceptions.									*)
 (********************************************************************************)
 
+exception Wrong_eliom_parameters of (string * exn) list
 exception Wizard_cancelled
-exception Wizard_error
 
 
 (********************************************************************************)
@@ -125,7 +125,7 @@ struct
 				| Invalid_argument _ -> None
 		in match maybe_submit with
 			| None
-			| Some Submit.Proceed   -> error_content sp exc_list
+			| Some Submit.Proceed   -> error_content sp (Wrong_eliom_parameters exc_list)
 			| Some Submit.Cancel    -> cancelled_content sp
 
 
@@ -138,28 +138,26 @@ struct
 
 	(**	Declares the common aspects to all wizard steps.
 	*)
-	let make_common ~path ~get_params ?cancelled_content ?error_content ?failed_content () =
+	let make_common ~path ~get_params ?cancelled_content ?error_content () =
 		let fallback = Eliom_services.new_service ~path ~get_params ()
 		and cancelled_content = new_or_default (fun sp -> Lwt.fail Wizard_cancelled) cancelled_content
-		and error_content = new_or_default (fun sp l -> Lwt.fail Wizard_error) error_content
-		and failed_content = new_or_default (fun sp exc -> Lwt.fail exc) failed_content
-		in (fallback, cancelled_content, error_content, failed_content)
+		and error_content = new_or_default (fun sp exc -> Lwt.fail exc) error_content
+		in (fallback, cancelled_content, error_content)
 
 
 	(**	Returns the common elements to all wizard steps.
 	*)
-	let get_common ~common ?cancelled_content ?error_content ?failed_content () =
-		let (fallback, default_cancelled_content, default_error_content, default_failed_content) = common in
+	let get_common ~common ?cancelled_content ?error_content () =
+		let (fallback, default_cancelled_content, default_error_content) = common in
 		let cancelled_content = new_or_default default_cancelled_content cancelled_content
 		and error_content = new_or_default default_error_content error_content
-		and failed_content = new_or_default default_failed_content failed_content
-		in ((fallback : ('a, unit, [ `Attached of [ `Internal of [ `Coservice | `Service ] * [ `Get ] ] Eliom_services.a_s ], 'b, 'c, unit, [ `Registrable ]) Eliom_services.service :> ('get,unit, [> `Attached of [> `Internal of [> `Service ] * [> `Get] ] Eliom_services.a_s ], 'tipo,'gn, unit, [> `Registrable ]) Eliom_services.service), cancelled_content, error_content, failed_content)
+		in ((fallback : ('a, unit, [ `Attached of [ `Internal of [ `Coservice | `Service ] * [ `Get ] ] Eliom_services.a_s ], 'b, 'c, unit, [ `Registrable ]) Eliom_services.service :> ('get,unit, [> `Attached of [> `Internal of [> `Service ] * [> `Get] ] Eliom_services.a_s ], 'tipo,'gn, unit, [> `Registrable ]) Eliom_services.service), cancelled_content, error_content)
 
 
 	(**	Declares the final step of the wizard.
 	*)
-	let make_last ~common ~carrier ~normal_content ?cancelled_content ?error_content ?failed_content ~post_params () =
-		let (fallback, cancelled_content, error_content, failed_content) = get_common ~common ?cancelled_content ?error_content ?failed_content () in
+	let make_last ~common ~carrier ~normal_content ?cancelled_content ?error_content ~post_params () =
+		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carry_in sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
 				Lwt.catch
@@ -167,7 +165,7 @@ struct
 						carrier ~carry_in sp gp pp >>= function
 							| `Proceed carry_out	-> normal_content ~carry_in ~carry_out sp gp pp
 							| `Cancel		-> cancelled_content sp)
-					(failed_content sp)
+					(error_content sp)
 			| Submit.Cancel ->
 				cancelled_content sp
 		and register handler carry_in sp =
@@ -182,8 +180,8 @@ struct
 
 	(**	Creates a non-skippable, intermediate (ie, neither initial nor final) step of the wizard.
 	*)
-	let make_intermediate ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ?failed_content ~post_params ~next () =
-		let (fallback, cancelled_content, error_content, failed_content) = get_common ~common ?cancelled_content ?error_content ?failed_content () in
+	let make_intermediate ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
+		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carry_in sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
 				Lwt.catch
@@ -200,7 +198,7 @@ struct
 								in normal_content ~carry_in ~carry_out ~form sp gp pp
 							| `Cancel ->
 								cancelled_content sp)
-					(failed_content sp)
+					(error_content sp)
 			| Submit.Cancel ->
 				cancelled_content sp
 		and register handler carry_in sp =
@@ -215,8 +213,8 @@ struct
 
 	(**	Creates a skippable, intermediate (ie, neither initial nor final) step of the wizard.
 	*)
-	let make_skippable ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ?failed_content ~post_params ~next () =
-		let (fallback, cancelled_content, error_content, failed_content) = get_common ~common ?cancelled_content ?error_content ?failed_content () in
+	let make_skippable ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~post_params ~next () =
+		let (fallback, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler carry_in sp gp (pp, submit_param) = match submit_param with
 			| Submit.Proceed ->
 				Lwt.catch
@@ -238,7 +236,7 @@ struct
 								in normal_content ~carry_in ~carry_out ~form sp gp pp
 							| `Cancel ->
 								cancelled_content sp)
-					(failed_content sp)
+					(error_content sp)
 			| Submit.Cancel ->
 				cancelled_content sp
 		and register handler carry_in sp =
@@ -254,8 +252,8 @@ struct
 	(**	Creates the handler for the first step (usable by first steps both with and without
 		POST parameters).
 	*)
-	let make_first_handler ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ?failed_content ~next () =
-		let (_, cancelled_content, error_content, failed_content) = get_common ~common ?cancelled_content ?error_content ?failed_content () in
+	let make_first_handler ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~next () =
+		let (_, cancelled_content, error_content) = get_common ~common ?cancelled_content ?error_content () in
 		let handler sp gp pp =
 			let carry_in = () in
 			Lwt.catch
@@ -272,24 +270,24 @@ struct
 							in normal_content ~carry_in ~carry_out ~form sp gp pp
 						| `Cancel ->
 							cancelled_content sp)
-				(failed_content sp)
+				(error_content sp)
 		in handler
 
 
 	(**	Creates the initial step for a wizard, without any POST parameters.
 	*)
-	let make_first ?sp ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ?failed_content ~next () =
-		let (fallback, _, _, _) = get_common ~common () in
-		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ?failed_content ~next ()
+	let make_first ?sp ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~next () =
+		let (fallback, _, _) = get_common ~common () in
+		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~next ()
 		in Eliom_predefmod.Xhtml.register ?sp ~service:fallback handler
 
 
 	(**	Creates the initial step for a wizard, with POST parameters.
 	*)
-	let make_first_with_post ~common ~carrier ~form_maker ~normal_content ~fallback_content ~post_params ?cancelled_content ?error_content ?failed_content ~next () =
-		let (fallback, _, _, _) = get_common ~common () in
+	let make_first_with_post ~common ~carrier ~form_maker ~normal_content ~fallback_content ~post_params ?cancelled_content ?error_content ~next () =
+		let (fallback, _, _) = get_common ~common () in
 		let () = Eliom_predefmod.Xhtml.register ~service:fallback fallback_content in
-		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ?failed_content ~next () in
+		let handler = make_first_handler ~common ~carrier ~form_maker ~normal_content ?cancelled_content ?error_content ~next () in
 		Eliom_predefmod.Xhtml.register_new_post_service ~fallback ~post_params handler
 end
 

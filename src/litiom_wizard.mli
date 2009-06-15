@@ -264,8 +264,8 @@
 	corresponding situation has been defined.
 *)
 
+exception Wrong_eliom_parameters of (string * exn) list
 exception Wizard_cancelled
-exception Wizard_error
 
 
 (********************************************************************************)
@@ -320,15 +320,13 @@ module Steps :
       get_params:('a, [< Eliom_services.suff ] as 'b, 'c)
                  Eliom_parameters.params_type ->
       ?cancelled_content:('d -> 'e Lwt.t) ->
-      ?error_content:('f -> 'g -> 'h Lwt.t) ->
-      ?failed_content:('i -> exn -> 'j Lwt.t) ->
+      ?error_content:('f -> exn -> 'g Lwt.t) ->
       unit ->
       ('a, unit,
        [> `Attached of
             [> `Internal of [> `Service ] * [> `Get ] ] Eliom_services.a_s ],
        'b, 'c, unit, [> `Registrable ])
-      Eliom_services.service * ('d -> 'e Lwt.t) * ('f -> 'g -> 'h Lwt.t) *
-      ('i -> exn -> 'j Lwt.t)
+      Eliom_services.service * ('d -> 'e Lwt.t) * ('f -> exn -> 'g Lwt.t)
 
     val make_last :
       common:('a, unit,
@@ -339,8 +337,6 @@ module Steps :
              Eliom_services.service *
              (Eliom_sessions.server_params ->
               Eliom_predefmod.Xhtml.page Lwt.t) *
-             (Eliom_sessions.server_params ->
-              (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) *
              (Eliom_sessions.server_params ->
               exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carry_in:'d ->
@@ -353,9 +349,7 @@ module Steps :
       ?cancelled_content:(Eliom_sessions.server_params ->
                           Eliom_predefmod.Xhtml.page Lwt.t) ->
       ?error_content:(Eliom_sessions.server_params ->
-                      (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?failed_content:(Eliom_sessions.server_params ->
-                       exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+                      exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       post_params:('h, [ `WithoutSuffix ], 'i) Eliom_parameters.params_type ->
       unit ->
       (('j ->
@@ -384,8 +378,6 @@ module Steps :
              (Eliom_sessions.server_params ->
               Eliom_predefmod.Xhtml.page Lwt.t) *
              (Eliom_sessions.server_params ->
-              (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) *
-             (Eliom_sessions.server_params ->
               exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carry_in:'d ->
                Eliom_sessions.server_params ->
@@ -401,9 +393,7 @@ module Steps :
       ?cancelled_content:(Eliom_sessions.server_params ->
                           Eliom_predefmod.Xhtml.page Lwt.t) ->
       ?error_content:(Eliom_sessions.server_params ->
-                      (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?failed_content:(Eliom_sessions.server_params ->
-                       exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+                      exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       post_params:('i, [ `WithoutSuffix ], 'j) Eliom_parameters.params_type ->
       next:('k ->
             'g ->
@@ -442,8 +432,6 @@ module Steps :
              (Eliom_sessions.server_params ->
               Eliom_predefmod.Xhtml.page Lwt.t) *
              (Eliom_sessions.server_params ->
-              (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) *
-             (Eliom_sessions.server_params ->
               exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carry_in:'d ->
                Eliom_sessions.server_params ->
@@ -459,9 +447,7 @@ module Steps :
       ?cancelled_content:(Eliom_sessions.server_params ->
                           Eliom_predefmod.Xhtml.page Lwt.t) ->
       ?error_content:(Eliom_sessions.server_params ->
-                      (string * exn) list -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?failed_content:(Eliom_sessions.server_params ->
-                       exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+                      exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       post_params:('j, [ `WithoutSuffix ], 'k) Eliom_parameters.params_type ->
       next:(('h ->
              Eliom_sessions.server_params ->
@@ -504,35 +490,33 @@ module Steps :
              Eliom_services.service *
              (Eliom_sessions.server_params ->
               Eliom_predefmod.Xhtml.page Lwt.t) *
-             'c *
              (Eliom_sessions.server_params ->
               exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carry_in:unit ->
                Eliom_sessions.server_params ->
-               'a -> unit -> [< `Cancel | `Proceed of 'd ] Lwt.t) ->
+               'a -> unit -> [< `Cancel | `Proceed of 'c ] Lwt.t) ->
       form_maker:(carry_in:unit ->
-                  carry_out:'d ->
-                  'e -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
+                  carry_out:'c ->
+                  'd -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
       normal_content:(carry_in:unit ->
-                      carry_out:'d ->
+                      carry_out:'c ->
                       form:[> Xhtmltypes.form ] XHTML.M.elt ->
                       Eliom_sessions.server_params ->
                       'a -> unit -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       ?cancelled_content:(Eliom_sessions.server_params ->
                           Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?error_content:'c ->
-      ?failed_content:(Eliom_sessions.server_params ->
-                       exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      next:('f ->
-            'd ->
+      ?error_content:(Eliom_sessions.server_params ->
+                      exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+      next:('e ->
+            'c ->
             Eliom_sessions.server_params ->
-            ('a, 'g, [< Eliom_services.post_service_kind ],
-             [< Eliom_services.suff ], 'h,
-             'e *
+            ('a, 'f, [< Eliom_services.post_service_kind ],
+             [< Eliom_services.suff ], 'g,
+             'd *
              [< Submit.t Eliom_parameters.setoneradio ]
              Eliom_parameters.param_name, [< Eliom_services.registrable ])
             Eliom_services.service) *
-           'f ->
+           'e ->
       unit -> unit
 
     val make_first_with_post :
@@ -544,44 +528,41 @@ module Steps :
              Eliom_services.service *
              (Eliom_sessions.server_params ->
               Eliom_predefmod.Xhtml.page Lwt.t) *
-             'd *
              (Eliom_sessions.server_params ->
               exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       carrier:(carry_in:unit ->
                Eliom_sessions.server_params ->
-               'a -> 'e -> [< `Cancel | `Proceed of 'f ] Lwt.t) ->
+               'a -> 'd -> [< `Cancel | `Proceed of 'e ] Lwt.t) ->
       form_maker:(carry_in:unit ->
-                  carry_out:'f ->
-                  'g -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
+                  carry_out:'e ->
+                  'f -> Xhtmltypes.form_content XHTML.M.elt list Lwt.t) ->
       normal_content:(carry_in:unit ->
-                      carry_out:'f ->
+                      carry_out:'e ->
                       form:[> Xhtmltypes.form ] XHTML.M.elt ->
                       Eliom_sessions.server_params ->
-                      'a -> 'e -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+                      'a -> 'd -> Eliom_predefmod.Xhtml.page Lwt.t) ->
       fallback_content:(Eliom_sessions.server_params ->
                         'a -> unit -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      post_params:('e, [ `WithoutSuffix ], 'h) Eliom_parameters.params_type ->
+      post_params:('d, [ `WithoutSuffix ], 'g) Eliom_parameters.params_type ->
       ?cancelled_content:(Eliom_sessions.server_params ->
                           Eliom_predefmod.Xhtml.page Lwt.t) ->
-      ?error_content:'d ->
-      ?failed_content:(Eliom_sessions.server_params ->
-                       exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
-      next:('i ->
-            'f ->
+      ?error_content:(Eliom_sessions.server_params ->
+                      exn -> Eliom_predefmod.Xhtml.page Lwt.t) ->
+      next:('h ->
+            'e ->
             Eliom_sessions.server_params ->
-            ('a, 'j, [< Eliom_services.post_service_kind ],
-             [< Eliom_services.suff ], 'k,
-             'g *
+            ('a, 'i, [< Eliom_services.post_service_kind ],
+             [< Eliom_services.suff ], 'j,
+             'f *
              [< Submit.t Eliom_parameters.setoneradio ]
              Eliom_parameters.param_name, [< Eliom_services.registrable ])
             Eliom_services.service) *
-           'i ->
+           'h ->
       unit ->
-      ('a, 'e,
+      ('a, 'd,
        [> `Attached of
             [> `Internal of Eliom_services.servcoserv * [> `Post ] ]
             Eliom_services.a_s ],
-       'b, 'c, 'h, [> `Registrable ])
+       'b, 'c, 'g, [> `Registrable ])
       Eliom_services.service
   end
-

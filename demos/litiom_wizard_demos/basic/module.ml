@@ -15,22 +15,16 @@ let common =
 			(html
 			(head (title (pcdata "Wizard cancelled")) [])
 			(body [p [pcdata "You cancelled!"]]))
-	and error_content sp exc_list =
+	and error_content sp exc =
 		Lwt.return
 			(html
 			(head (title (pcdata "Wizard error")) [])
 			(body [p [pcdata "There was an error!"]]))
-	and failed_content sp exc =
-		Lwt.return
-			(html
-			(head (title (pcdata "Wizard failed")) [])
-			(body [p [pcdata "There was an exception!"]]))
 	in Steps.make_common
 		~path: [""]
 		~get_params: Eliom_parameters.unit
 		~cancelled_content
 		~error_content
-		~failed_content
 		()
 
 

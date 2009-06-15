@@ -31,22 +31,16 @@ let common =
 			(html
 			(head (title (pcdata "Wizard cancelled")) [])
 			(body [p [pcdata "You cancelled!"]]))
-	and error_content sp exc_list =
+	and error_content sp exc =
 		Lwt.return
 			(html
 			(head (title (pcdata "Wizard error")) [])
 			(body [p [pcdata "There was an error!"]]))
-	and failed_content sp exc =
-		Lwt.return
-			(html
-			(head (title (pcdata "Wizard failed")) [])
-			(body [p [pcdata "There was an exception!"]]))
 	in Steps.make_common
 		~path: [""]
 		~get_params: Eliom_parameters.unit
 		~cancelled_content
 		~error_content
-		~failed_content
 		()
 
 
@@ -65,7 +59,7 @@ let step3 =
 				p [pcdata ("X is " ^ (string_of_int x))];
 				p [pcdata ("Y is " ^ y)];
 				])) in
-	let failed_content sp = function
+	let error_content sp = function
 			| Odd_int ->
 				Lwt.return
 					(html
@@ -77,7 +71,7 @@ let step3 =
 		~common
 		~carrier
 		~normal_content
-		~failed_content
+		~error_content
 		~post_params: Eliom_parameters.unit
 		()
 
