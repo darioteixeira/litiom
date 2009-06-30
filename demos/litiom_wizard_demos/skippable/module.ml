@@ -8,8 +8,8 @@ open Litiom_wizard
 
 (********************************************************************************)
 
-let common =
-	Steps.make_common
+let fallback =
+	Eliom_services.new_service
 		~path: [""]
 		~get_params: Eliom_parameters.unit
 		()
@@ -29,7 +29,7 @@ let step4 =
 				p [pcdata ("Z is " ^ match maybe_z with Some z -> string_of_int z | None -> "(none)")]
 				]))
 	in Steps.make_last
-		~common
+		~fallback
 		~carrier: Carriers.none
 		~normal_content
 		~post_params: (Eliom_parameters.int "z")
@@ -56,7 +56,7 @@ let step3 =
 			(head (title (pcdata "Wizard step 3")) [])
 			(body [form]))
 	in Steps.make_skippable
-		~common
+		~fallback
 		~carrier
 		~form_maker
 		~normal_content
@@ -83,7 +83,7 @@ let step2 =
 			(head (title (pcdata "Wizard step 2")) [])
 			(body [form]))
 	in Steps.make_intermediate
-		~common
+		~fallback
 		~carrier: Carriers.present
 		~form_maker
 		~normal_content
@@ -110,7 +110,7 @@ let step1 =
 			(head (title (pcdata "Wizard step 1")) [])
 			(body [form]))
 	in Steps.make_first
-		~common
+		~fallback
 		~carrier: Carriers.present
 		~form_maker
 		~normal_content

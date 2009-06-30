@@ -9,23 +9,8 @@ open Litiom_wizard
 
 (********************************************************************************)
 
-let common =
-	let cancelled_content sp =
-		Lwt.return
-			(html
-			(head (title (pcdata "Wizard cancelled")) [])
-			(body [p [pcdata "You cancelled!"]]))
-	and error_content sp exc =
-		Lwt.return
-			(html
-			(head (title (pcdata "Wizard error")) [])
-			(body [p [pcdata "There was an error!"]]))
-	in Steps.make_common
-		~path: [""]
-		~get_params: Eliom_parameters.unit
-		~cancelled_content
-		~error_content
-		()
+let fallback =
+	Eliom_services.new_service ~path: [""] ~get_params: Eliom_parameters.unit ()
 
 
 (********************************************************************************)
@@ -44,7 +29,7 @@ let step3 =
 				p [pcdata ("X + Y is " ^ (string_of_int (x+y)))];
 				]))
 	in Steps.make_last
-		~common
+		~fallback
 		~carrier
 		~normal_content
 		~post_params: (Eliom_parameters.int "y")
@@ -71,7 +56,7 @@ let step2 =
 			(head (title (pcdata "Wizard step 2")) [])
 			(body [form]))
 	in Steps.make_intermediate
-		~common
+		~fallback
 		~carrier
 		~form_maker
 		~normal_content
@@ -98,7 +83,7 @@ let step1 =
 			(head (title (pcdata "Wizard step 1")) [])
 			(body [form]))
 	in Steps.make_first
-		~common
+		~fallback
 		~carrier: Carriers.none
 		~form_maker
 		~normal_content

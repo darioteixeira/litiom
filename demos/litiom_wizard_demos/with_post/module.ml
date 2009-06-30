@@ -8,8 +8,8 @@ open Litiom_wizard
 
 (********************************************************************************)
 
-let common =
-	Steps.make_common
+let fallback =
+	Eliom_services.new_service
 		~path: ["wizard"]
 		~get_params: Eliom_parameters.unit
 		()
@@ -29,7 +29,7 @@ let step3 =
 				p [pcdata ("X + Y is " ^ (string_of_int (x+y)))];
 				]))
 	in Steps.make_last
-		~common
+		~fallback
 		~carrier: Carriers.none
 		~normal_content
 		~post_params: (Eliom_parameters.int "y")
@@ -56,7 +56,7 @@ let step2 =
 			(head (title (pcdata "Wizard step 2")) [])
 			(body [form]))
 	in Steps.make_intermediate
-		~common
+		~fallback
 		~carrier
 		~form_maker
 		~normal_content
@@ -91,7 +91,7 @@ let step1 =
 			(head (title (pcdata "Wizard fallback")) [])
 			(body [p [pcdata "This is the fallback"]]))
 	in Steps.make_first_with_post
-		~common
+		~fallback
 		~carrier: Carriers.present
 		~form_maker
 		~normal_content
