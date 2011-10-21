@@ -1,6 +1,0 @@
-name="litiom"
-version="1.0"
-description="The Litiom library"
-requires=""
-archive(byte)="litiom.cma"
-archive(native)="litiom.cmxs"
