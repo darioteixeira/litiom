@@ -1,7 +1,7 @@
 name="litiom"
 version="2.0"
 description="The Litiom library"
-requires="ocsigen.ext.eliom"
+requires="eliom.server"
 archive(byte)="litiom.cma"
 archive(native)="litiom.cmxa"
 archive(plugin,byte)="litiom.cma"
