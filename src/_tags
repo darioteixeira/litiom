@@ -1,2 +1,2 @@
-true: use_thread, package(ocsigen.ext.eliom)
+true: use_thread, package(eliom.server)
 

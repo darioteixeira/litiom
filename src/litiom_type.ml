@@ -4,6 +4,9 @@
 *)
 (********************************************************************************)
 
+open Eliom_pervasives
+
+
 (********************************************************************************)
 (**	{1 Module types}							*)
 (********************************************************************************)
@@ -43,50 +46,50 @@ sig
 		(t, [ `WithoutSuffix ], [ `One of t ] Eliom_parameters.param_name) Eliom_parameters.params_type
 
 	val input:
-		?a:Xhtmltypes.input_attrib XHTML.M.attrib list ->
-		input_type:[< Eliom_predefmod.Xhtml.basic_input_type ] ->
+		?a:XHTML_types.input_attrib XHTML.M.attrib list ->
+		input_type:[< `Hidden | `Password | `Submit | `Text ] ->
 		?name:[< t Eliom_parameters.setoneradio ] Eliom_parameters.param_name ->
 		?value:t ->
 		unit ->
-		[> Xhtmltypes.input ] XHTML.M.elt
+		[> XHTML_types.input ] XHTML.M.elt
 
 	val image_input:
-		?a:Xhtmltypes.input_attrib XHTML.M.attrib list ->
+		?a:XHTML_types.input_attrib XHTML.M.attrib list ->
 		name:[< (t * Eliom_parameters.coordinates) Eliom_parameters.oneradio ] Eliom_parameters.param_name ->
 		value:t ->
 		?src:XHTML.M.uri ->
 		unit ->
-		[> Xhtmltypes.input ] XHTML.M.elt
+		[> XHTML_types.input ] XHTML.M.elt
 
 	val checkbox:
-		?a:Xhtmltypes.input_attrib XHTML.M.attrib list ->
+		?a:XHTML_types.input_attrib XHTML.M.attrib list ->
 		?checked:bool ->
 		name:[ `Set of t ] Eliom_parameters.param_name ->
 		value:t ->
 		unit ->
-		[> Xhtmltypes.input ] XHTML.M.elt
+		[> XHTML_types.input ] XHTML.M.elt
 
 	val radio:
-		?a:Xhtmltypes.input_attrib XHTML.M.attrib list ->
+		?a:XHTML_types.input_attrib XHTML.M.attrib list ->
 		?checked:bool ->
 		name:[ `Radio of t ] Eliom_parameters.param_name ->
 		value:t ->
 		unit ->
-		[> Xhtmltypes.input ] XHTML.M.elt
+		[> XHTML_types.input ] XHTML.M.elt
 
 	val button:
-		?a:Xhtmltypes.button_attrib XHTML.M.attrib list ->
+		?a:XHTML_types.button_attrib XHTML.M.attrib list ->
 		name:[< t Eliom_parameters.setone ] Eliom_parameters.param_name ->
 		value:t ->
-		Xhtmltypes.button_content XHTML.M.elt list ->
-		[> Xhtmltypes.button ] XHTML.M.elt
+		XHTML_types.button_content XHTML.M.elt list ->
+		[> XHTML_types.button ] XHTML.M.elt
 
 	val select:
-		?a:Xhtmltypes.select_attrib XHTML.M.attrib list ->
+		?a:XHTML_types.select_attrib XHTML.M.attrib list ->
 		name:[< `One of t ] Eliom_parameters.param_name ->
-		t Eliom_predefmod.Xhtml.select_opt ->
-		t Eliom_predefmod.Xhtml.select_opt list ->
-		[> Xhtmltypes.select ] XHTML.M.elt
+		t Eliom_output.Xhtml.select_opt ->
+		t Eliom_output.Xhtml.select_opt list ->
+		[> XHTML_types.select ] XHTML.M.elt
 end
 
 
@@ -95,12 +98,12 @@ sig
 	type t
 
 	val choose:
-		?a:Xhtmltypes.select_attrib XHTML.M.attrib list ->
+		?a:XHTML_types.select_attrib XHTML.M.attrib list ->
 		name:[< `One of t ] Eliom_parameters.param_name ->
 		?value:t ->
 		?allowed:(t * t list) ->
 		unit ->
-		[> Xhtmltypes.select ] XHTML.M.elt
+		[> XHTML_types.select ] XHTML.M.elt
 end
 
 
@@ -109,13 +112,13 @@ sig
 	type t = string
 
 	val textarea:
-		?a:Xhtmltypes.textarea_attrib XHTML.M.attrib list ->
+		?a:XHTML_types.textarea_attrib XHTML.M.attrib list ->
 		name:[< string Eliom_parameters.setoneradio ] Eliom_parameters.param_name ->
 		?value:string ->
 		rows:int ->
 		cols:int ->
 		unit ->
-		[> Xhtmltypes.textarea ] XHTML.M.elt
+		[> XHTML_types.textarea ] XHTML.M.elt
 end
 
 
@@ -158,12 +161,12 @@ struct
 	include Base
 
 	let param = Eliom_parameters.user_type ~of_string ~to_string
-	let input ?a = Eliom_predefmod.Xhtml.user_type_input to_string ?a
-	let image_input ?a = Eliom_predefmod.Xhtml.user_type_image_input to_string ?a
-	let checkbox = Eliom_predefmod.Xhtml.user_type_checkbox to_string
-	let radio = Eliom_predefmod.Xhtml.user_type_radio to_string
-	let button ?a = Eliom_predefmod.Xhtml.user_type_button to_string ?a
-	let select ?a = Eliom_predefmod.Xhtml.user_type_select to_string ?a
+	let input ?a = Eliom_output.Xhtml.user_type_input to_string ?a
+	let image_input ?a = Eliom_output.Xhtml.user_type_image_input to_string ?a
+	let checkbox = Eliom_output.Xhtml.user_type_checkbox to_string
+	let radio = Eliom_output.Xhtml.user_type_radio to_string
+	let button ?a = Eliom_output.Xhtml.user_type_button to_string ?a
+	let select ?a = Eliom_output.Xhtml.user_type_select to_string ?a
 
 end
 
@@ -179,7 +182,7 @@ struct
 			let is_selected = match value with
 				| Some v -> item = v
 				| None   -> false
-			in Eliom_predefmod.Xhtml.Option ([], item, Some (XHTML.M.pcdata (describe item)), is_selected)
+			in Eliom_output.Xhtml.Option ([], item, Some (XHTML.M.pcdata (describe item)), is_selected)
 		in select ?a ~name (option_of_item elem_hd) (List.map option_of_item elem_tl)
 end
 
@@ -189,7 +192,7 @@ struct
 	include Base
 	include (Make_simple (Base) : SIMPLE_SEMI with type t := t)
 
-	let textarea = Eliom_predefmod.Xhtml.textarea
+	let textarea = Eliom_output.Xhtml.textarea
 end
 
 
@@ -205,12 +208,12 @@ struct
 	let to_string = string_of_int
 
 	let param = Eliom_parameters.int
-	let input = Eliom_predefmod.Xhtml.int_input
-	let image_input = Eliom_predefmod.Xhtml.int_image_input
-	let checkbox = Eliom_predefmod.Xhtml.int_checkbox
-	let radio = Eliom_predefmod.Xhtml.int_radio
-	let button = Eliom_predefmod.Xhtml.int_button
-	let select = Eliom_predefmod.Xhtml.int_select
+	let input = Eliom_output.Xhtml.int_input
+	let image_input = Eliom_output.Xhtml.int_image_input
+	let checkbox = Eliom_output.Xhtml.int_checkbox
+	let radio = Eliom_output.Xhtml.int_radio
+	let button = Eliom_output.Xhtml.int_button
+	let select = Eliom_output.Xhtml.int_select
 end
 
 
@@ -222,12 +225,12 @@ struct
 	let to_string = Int32.to_string
 
 	let param = Eliom_parameters.int32
-	let input = Eliom_predefmod.Xhtml.int32_input
-	let image_input = Eliom_predefmod.Xhtml.int32_image_input
-	let checkbox = Eliom_predefmod.Xhtml.int32_checkbox
-	let radio = Eliom_predefmod.Xhtml.int32_radio
-	let button = Eliom_predefmod.Xhtml.int32_button
-	let select = Eliom_predefmod.Xhtml.int32_select
+	let input = Eliom_output.Xhtml.int32_input
+	let image_input = Eliom_output.Xhtml.int32_image_input
+	let checkbox = Eliom_output.Xhtml.int32_checkbox
+	let radio = Eliom_output.Xhtml.int32_radio
+	let button = Eliom_output.Xhtml.int32_button
+	let select = Eliom_output.Xhtml.int32_select
 end
 
 
@@ -239,12 +242,12 @@ struct
 	let to_string = Int64.to_string
 
 	let param = Eliom_parameters.int64
-	let input = Eliom_predefmod.Xhtml.int64_input
-	let image_input = Eliom_predefmod.Xhtml.int64_image_input
-	let checkbox = Eliom_predefmod.Xhtml.int64_checkbox
-	let radio = Eliom_predefmod.Xhtml.int64_radio
-	let button = Eliom_predefmod.Xhtml.int64_button
-	let select = Eliom_predefmod.Xhtml.int64_select
+	let input = Eliom_output.Xhtml.int64_input
+	let image_input = Eliom_output.Xhtml.int64_image_input
+	let checkbox = Eliom_output.Xhtml.int64_checkbox
+	let radio = Eliom_output.Xhtml.int64_radio
+	let button = Eliom_output.Xhtml.int64_button
+	let select = Eliom_output.Xhtml.int64_select
 end
 
 
@@ -256,12 +259,12 @@ struct
 	let to_string = string_of_float
 
 	let param = Eliom_parameters.float
-	let input = Eliom_predefmod.Xhtml.float_input
-	let image_input = Eliom_predefmod.Xhtml.float_image_input
-	let checkbox = Eliom_predefmod.Xhtml.float_checkbox
-	let radio = Eliom_predefmod.Xhtml.float_radio
-	let button = Eliom_predefmod.Xhtml.float_button
-	let select = Eliom_predefmod.Xhtml.float_select
+	let input = Eliom_output.Xhtml.float_input
+	let image_input = Eliom_output.Xhtml.float_image_input
+	let checkbox = Eliom_output.Xhtml.float_checkbox
+	let radio = Eliom_output.Xhtml.float_radio
+	let button = Eliom_output.Xhtml.float_button
+	let select = Eliom_output.Xhtml.float_select
 end
 
 
@@ -273,12 +276,12 @@ struct
 	external to_string: t -> string = "%identity"
 
 	let param = Eliom_parameters.string
-	let input = Eliom_predefmod.Xhtml.string_input
-	let image_input = Eliom_predefmod.Xhtml.string_image_input
-	let checkbox = Eliom_predefmod.Xhtml.string_checkbox
-	let radio = Eliom_predefmod.Xhtml.string_radio
-	let button = Eliom_predefmod.Xhtml.string_button
-	let select = Eliom_predefmod.Xhtml.string_select
-	let textarea = Eliom_predefmod.Xhtml.textarea
+	let input = Eliom_output.Xhtml.string_input
+	let image_input = Eliom_output.Xhtml.string_image_input
+	let checkbox = Eliom_output.Xhtml.string_checkbox
+	let radio = Eliom_output.Xhtml.string_radio
+	let button = Eliom_output.Xhtml.string_button
+	let select = Eliom_output.Xhtml.string_select
+	let textarea = Eliom_output.Xhtml.textarea
 end
 
