@@ -1,0 +1,12 @@
+# OASIS_START
+# DO NOT EDIT (digest: 32117633cf52bf26e5a90f70d4bdd6df)
+version = "3.0"
+description = "Extensions to Ocsigen's Eliom"
+requires = "threads eliom.server"
+archive(byte) = "litiom.cma"
+archive(byte, plugin) = "litiom.cma"
+archive(native) = "litiom.cmxa"
+archive(native, plugin) = "litiom.cmxs"
+exists_if = "litiom.cma"
+# OASIS_STOP
+

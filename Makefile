@@ -1,39 +1,38 @@
-#
-# Configuration options
-#
+# OASIS_START
+# DO NOT EDIT (digest: bc1e05bfc8b39b664f29dae8dbd3ebbb)
 
-PKG_NAME=litiom
+SETUP = ocaml setup.ml
 
-SRC_DIR=src
+build: setup.data
+	$(SETUP) -build $(BUILDFLAGS)
 
-LIB_BUILD_DIR=$(SRC_DIR)/_build
-LIB_TARGETS=litiom.cma litiom.cmxa litiom.a litiom_type.cmi
-LIB_FQTARGETS=$(foreach TARGET, $(LIB_TARGETS), $(LIB_BUILD_DIR)/$(TARGET))
+doc: setup.data build
+	$(SETUP) -doc $(DOCFLAGS)
 
-OCAMLBUILD_OPTS=-no-links -use-ocamlfind
+test: setup.data build
+	$(SETUP) -test $(TESTFLAGS)
 
-#
-# Rules
-#
+all: 
+	$(SETUP) -all $(ALLFLAGS)
 
-all: lib
+install: setup.data
+	$(SETUP) -install $(INSTALLFLAGS)
 
-lib:
-	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILD_OPTS) $(LIB_TARGETS)
+uninstall: setup.data
+	$(SETUP) -uninstall $(UNINSTALLFLAGS)
 
-doc: lib
-	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILD_OPTS) litiom.docdir/index.html
+reinstall: setup.data
+	$(SETUP) -reinstall $(REINSTALLFLAGS)
 
-install: lib
-	ocamlfind install $(PKG_NAME) META $(LIB_FQTARGETS)
+clean: 
+	$(SETUP) -clean $(CLEANFLAGS)
 
-uninstall:
-	ocamlfind remove $(PKG_NAME)
+distclean: 
+	$(SETUP) -distclean $(DISTCLEANFLAGS)
 
-reinstall: lib
-	ocamlfind remove $(PKG_NAME)
-	ocamlfind install $(PKG_NAME) META $(LIB_FQTARGETS)
+setup.data:
+	$(SETUP) -configure $(CONFIGUREFLAGS)
 
-clean:
-	cd $(SRC_DIR) && ocamlbuild $(OCAMLBUILD_OPTS) -clean
+.PHONY: build doc test all install uninstall reinstall clean distclean configure
 
+# OASIS_STOP
