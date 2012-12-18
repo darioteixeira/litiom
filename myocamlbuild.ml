@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: 095f9de9269b8d97e2f345cae36384d4) *)
+(* DO NOT EDIT (digest: 55abd2946d83bf6256dbd3a0b8278378) *)
 module OASISGettext = struct
 (* # 21 "/home/dario/.opam/4.00.1/build/oasis.0.3.0/src/oasis/OASISGettext.ml" *)
 
@@ -480,7 +480,7 @@ let package_default =
      MyOCamlbuildBase.lib_ocaml = [("litiom", ["src"])];
      lib_c = [];
      flags = [];
-     includes = [("test", ["src"])];
+     includes = [];
      }
   ;;
 
