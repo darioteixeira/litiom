@@ -1,5 +1,5 @@
 =========================================================================
-| README for Litiom 3.0							|
+| README for Litiom 2.0							|
 |									|
 | Dario Teixeira (dario.teixeira@yahoo.com)				|
 | December 2012								|
@@ -11,34 +11,28 @@
 Litiom aims to complement Eliom, the web programming framework part of the
 Ocsigen project [1].  Litiom is basically a collection of modules offering
 high-level constructs for web programming.  Presently, the library contains
-the Litiom_blocks and the Litiom_wizard modules.  Litiom_blocks uses the
-arrow formalism to build a simple algebra of Lwt functions plumbed together.
-It allows for simple composition of functions, forking & joining, and placing
-the result of a list of computations inside containers.  The end is to enable
-the construction of page fragments via the composition of simple building
-blocks.  As for Litiom_wizard, it offers routines aiming to automate and
-simplify the construction of wizard-like interactions in websites.
+only the Litiom_type module, which contains facilities for improving modularity
+and abstraction in Eliom applications.
 
 
 2. Dependencies
 ===============
 
-Litiom depends on Lwt and Ocsigen.
+Litiom depends on Eliom [1].
 
 
 3. Building and installing
 ==========================
 
-Typing "make" suffices to build the Litiom library.  The build system
-relies on Ocamlbuild, and therefore must be used with Ocaml 3.10 or newer.
-After building, type "make install" to perform a findlib installation, and
-"make apidoc" to build the API documentation.
+The build system relies on OASIS.  The customary sequence of './configure',
+'make', and 'make install' is used to build and install the library.  Run
+'make doc' to generate the API documentation.
 
 
 4. License
 ==========
 
-Litiom is distributed under the terms of the GNU GPL version 2.
+Litiom is distributed under the terms of the GNU LGPL version 2.1.
 See LICENSE file for full license text.
 
 
