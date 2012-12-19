@@ -154,7 +154,7 @@ end
 (**	{1 Functors}								*)
 (********************************************************************************)
 
-module Make_simple (Base: SIMPLE_BASE) : SIMPLE_S with type t = Base.t =
+module Make_simple (Base: SIMPLE_BASE): SIMPLE_S with type t = Base.t =
 struct
 	include Base
 
@@ -169,10 +169,10 @@ struct
 end
 
 
-module Make_choice (Base: CHOICE_BASE) : CHOICE_S with type t = Base.t =
+module Make_choice (Base: CHOICE_BASE): CHOICE_S with type t = Base.t =
 struct
 	include Base
-	include (Make_simple (Base) : SIMPLE_SEMI with type t := t)
+	include (Make_simple (Base): SIMPLE_SEMI with type t := t)
 
 	let choose ?a ~name ?value ?(allowed = elems) () =
 		let (elem_hd, elem_tl) = allowed in
@@ -185,10 +185,10 @@ struct
 end
 
 
-module Make_textual (Base: SIMPLE_BASE with type t = string) : TEXTUAL_S =
+module Make_textual (Base: SIMPLE_BASE with type t = string): TEXTUAL_S =
 struct
 	include Base
-	include (Make_simple (Base) : SIMPLE_SEMI with type t := t)
+	include (Make_simple (Base): SIMPLE_SEMI with type t := t)
 
 	let textarea = Html5.F.textarea
 end
@@ -198,7 +198,7 @@ end
 (**	{1 Predefined modules based on primitive types}				*)
 (********************************************************************************)
 
-module Int : SIMPLE_S with type t = int =
+module Int: SIMPLE_S with type t = int =
 struct
 	type t = int
 
@@ -215,7 +215,7 @@ struct
 end
 
 
-module Int32 : SIMPLE_S with type t = int32 =
+module Int32: SIMPLE_S with type t = int32 =
 struct
 	type t = int32
 
@@ -232,7 +232,7 @@ struct
 end
 
 
-module Int64 : SIMPLE_S with type t = int64 =
+module Int64: SIMPLE_S with type t = int64 =
 struct
 	type t = int64
 
@@ -249,7 +249,7 @@ struct
 end
 
 
-module Float : SIMPLE_S with type t = float =
+module Float: SIMPLE_S with type t = float =
 struct
 	type t = float
 
@@ -266,7 +266,7 @@ struct
 end
 
 
-module String : TEXTUAL_S =
+module String: TEXTUAL_S =
 struct
 	type t = string
 

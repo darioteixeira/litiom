@@ -4,7 +4,97 @@
 *)
 (********************************************************************************)
 
-(**	Blah blah blah.
+(**	Facilities for improving modularity and abstraction in Eliom applications.
+
+	Suppose you have a service [coucou1] which accepts an [int32] as parameter.
+	The traditional way to declare and register the service, and to create a
+	form towards it would be as follows:
+	{v
+	let coucou1_handler x () =
+		Lwt.return
+			(html
+			(head (title (pcdata "Coucou1")) [])
+			(body [p [pcdata ("X = " ^ Int32.to_string x)]]))
+
+	let coucou1_service =
+		Eliom_registration.Html5.register_service
+			~path: ["coucou1"]
+			~get_params: (Eliom_parameter.int32 "x")
+			coucou1_handler
+
+	let coucou1_form enter_x =
+		[
+		fieldset
+			[
+			label ~a:[a_for enter_x] [pcdata "Enter X:"];
+			int32_input ~input_type:`Text ~name:enter_x ();
+			]
+		]
+	v}
+
+	This is, however, a brittle solution: if, for example, you were to change
+	[coucou1]'s parameter from an [int32] to an [int64], you would need to make
+	changes in various locations in your code, which in a large project would
+	likely be spread over multiple files.  Even though Eliom leverages OCaml's
+	strong typing to ensure that you would not forget any code still using the old
+	[int32], this state of affairs still makes refactoring cumbersome.  Moreover,
+	you do not have the ability to abstract away the type accepted by [coucou1].
+
+	This module suggests a different approach to handling types in Eliom
+	applications.  The basic principle is that all functions related to a given
+	type (namely service parameter declaration and the various form input widgets)
+	should reside in a single module named after the type.	The new version of
+	our sample code would look as follows:
+	{v
+	module Coucou = Litiom_type.Int32
+
+	let coucou2_handler x () =
+		Lwt.return
+			(html
+				(head (title (pcdata "Coucou2")) [])
+				(body [p [pcdata ("X = " ^ Coucou.to_string x)]]))
+
+	let coucou2_service =
+		Eliom_registration.Html5.register_service
+			~path:["coucou2"]
+			~get_params:(Coucou.param "x")
+			coucou2_handler
+
+	let coucou2_form enter_x =
+		[
+		fieldset
+			[
+			label ~a:[a_for enter_x] [pcdata "Enter X:"];
+			Coucou.input ~input_type:`Text ~name:enter_x ();
+			]
+		]
+	v}
+
+	Modifying [coucou2]'s type from an [int32] to an [int64] illustrates the
+	advantage of this approach, since only one line of code has to be changed:
+	{v
+	module Coucou = Litiom_type.Int64
+	v}
+
+	Moreover, user-defined types are easily accommodated.  [Litiom_type] provides
+	a functorial interface to create new modules compatible with its approach:
+	{v
+	module Coucou = Litiom_type.Make_simple
+	(struct
+		type t = [ `A | `B | `C ]
+
+		let of_string = function
+			| "A" -> `A
+			| "B" -> `B
+			| "C" -> `C
+			| x   -> invalid_arg ("Coucou.of_string: " ^ x)
+
+		let to_string = function
+			| `A -> "A"
+			| `B -> "B"
+			| `C -> "C"
+	end)
+	v}
 *)
 
 open Eliom_content
@@ -160,18 +250,18 @@ end
 (**	{1 Functors}								*)
 (********************************************************************************)
 
-module Make_simple : functor (Base: SIMPLE_BASE) -> SIMPLE_S with type t = Base.t
-module Make_choice : functor (Base: CHOICE_BASE) -> CHOICE_S with type t = Base.t
-module Make_textual : functor (Base: SIMPLE_BASE with type t = string) -> TEXTUAL_S
+module Make_simple: functor (Base: SIMPLE_BASE) -> SIMPLE_S with type t = Base.t
+module Make_choice: functor (Base: CHOICE_BASE) -> CHOICE_S with type t = Base.t
+module Make_textual: functor (Base: SIMPLE_BASE with type t = string) -> TEXTUAL_S
 
 
 (********************************************************************************)
 (**	{1 Predefined modules based on primitive types}				*)
 (********************************************************************************)
 
-module Int : SIMPLE_S with type t = int
-module Int32 : SIMPLE_S with type t = int32
-module Int64 : SIMPLE_S with type t = int64
-module Float : SIMPLE_S with type t = float
-module String : TEXTUAL_S
+module Int: SIMPLE_S with type t = int
+module Int32: SIMPLE_S with type t = int32
+module Int64: SIMPLE_S with type t = int64
+module Float: SIMPLE_S with type t = float
+module String: TEXTUAL_S
 
