@@ -1,6 +1,6 @@
 # OASIS_START
-# DO NOT EDIT (digest: f29047c86704dec5e370a2882277ea2b)
-version = "2.0"
+# DO NOT EDIT (digest: 3a893214ff028c1d6a10e52309391006)
+version = "2.1"
 description = "Extensions to Ocsigen's Eliom"
 requires = "threads eliom.server"
 archive(byte) = "litiom.cma"
