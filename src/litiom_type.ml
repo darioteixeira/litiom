@@ -47,7 +47,10 @@ sig
 
 	val input:
 		?a:Html5_types.input_attrib Html5.F.attrib list ->
-		input_type:[< `Hidden | `Password | `Submit | `Text ] ->
+		input_type:
+			[< `Button | `Checkbox | `Color | `Date | `Datetime | `Datetime_local | `Email
+			| `File | `Hidden | `Image | `Month | `Number | `Password | `Radio | `Range
+			| `Reset | `Search | `Submit | `Tel | `Text | `Time | `Url | `Week ] ->
 		?name:[< t Eliom_parameter.setoneradio ] Eliom_parameter.param_name ->
 		?value:t ->
 		unit ->
