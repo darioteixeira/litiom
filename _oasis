@@ -3,7 +3,7 @@ Name:			litiom
 Version:		2.1
 Synopsis:		Extensions to Ocsigen's Eliom
 Authors:		Dario Teixeira
-License:		LGPL-2.0 with OCaml linking exception
+License:		LGPL-2.1 with OCaml linking exception
 LicenseFile:		LICENSE
 Plugins:		META (0.3), DevFiles (0.3)
 BuildTools:		ocamlbuild, make
