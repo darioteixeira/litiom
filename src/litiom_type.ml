@@ -105,6 +105,7 @@ sig
 		name:[< `One of t ] Eliom_parameter.param_name ->
 		?value:t ->
 		?allowed:(t * t list) ->
+		?transform:(string -> string) ->
 		unit ->
 		[> Html5_types.select ] Html5.F.elt
 end
@@ -177,13 +178,13 @@ struct
 	include Base
 	include (Make_simple (Base): SIMPLE_SEMI with type t := t)
 
-	let choose ?a ~name ?value ?(allowed = elems) () =
+	let choose ?a ~name ?value ?(allowed = elems) ?(transform = String.capitalize) () =
 		let (elem_hd, elem_tl) = allowed in
 		let option_of_item item =
 			let is_selected = match value with
 				| Some v -> item = v
 				| None   -> false
-			in Html5.F.Option ([], item, Some (Html5.F.pcdata (describe item)), is_selected)
+			in Html5.F.Option ([], item, Some (Html5.F.pcdata (transform (describe item))), is_selected)
 		in select ?a ~name (option_of_item elem_hd) (List.map option_of_item elem_tl)
 end
 

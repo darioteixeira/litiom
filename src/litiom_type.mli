@@ -198,6 +198,7 @@ sig
 		name:[< `One of t ] Eliom_parameter.param_name ->
 		?value:t ->
 		?allowed:(t * t list) ->
+		?transform:(string -> string) ->
 		unit ->
 		[> Html5_types.select ] Html5.F.elt
 end
