@@ -182,6 +182,7 @@ sig
 
 	val select:
 		?a:Html5_types.select_attrib Html5.F.attrib list ->
+		?required:Html5_types.pcdata Html5.F.elt ->
 		name:[< `One of t ] Eliom_parameter.param_name ->
 		t Html5.F.select_opt ->
 		t Html5.F.select_opt list ->
