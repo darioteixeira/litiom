@@ -122,7 +122,7 @@ sig
 	include SIMPLE_BASE
 
 	val describe: t -> string
-	val elems: t * t list
+	val elems: t list
 end
 
 
@@ -198,7 +198,7 @@ sig
 		?a:Html5_types.select_attrib Html5.F.attrib list ->
 		name:[< `One of t ] Eliom_parameter.param_name ->
 		?value:t ->
-		?allowed:(t * t list) ->
+		?allowed:t list ->
 		?transform:(string -> string) ->
 		unit ->
 		[> Html5_types.select ] Html5.F.elt

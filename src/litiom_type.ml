@@ -29,7 +29,7 @@ sig
 	include SIMPLE_BASE
 
 	val describe: t -> string
-	val elems: t * t list
+	val elems: t list
 end
 
 
@@ -105,7 +105,7 @@ sig
 		?a:Html5_types.select_attrib Html5.F.attrib list ->
 		name:[< `One of t ] Eliom_parameter.param_name ->
 		?value:t ->
-		?allowed:(t * t list) ->
+		?allowed:t list ->
 		?transform:(string -> string) ->
 		unit ->
 		[> Html5_types.select ] Html5.F.elt
@@ -180,13 +180,15 @@ struct
 	include (Make_simple (Base): SIMPLE_SEMI with type t := t)
 
 	let choose ?a ~name ?value ?(allowed = elems) ?(transform = String.capitalize) () =
-		let (elem_hd, elem_tl) = allowed in
+		let (elem_hd, elem_tl) = match allowed with
+			| hd :: tl -> (hd, tl)
+			| []	   -> invalid_arg "Litiom_type.choose" in
 		let is_selected = match value with
 			| Some v -> fun item -> item = v
 			| None   -> fun item -> false in
 		let option_of_item item =
-			Html5.F.Option ([], item, Some (Html5.F.pcdata (transform (describe item))), is_selected item)
-		in select ?a ~name (option_of_item elem_hd) (List.map option_of_item elem_tl)
+			Html5.F.Option ([], item, Some (Html5.F.pcdata (transform (describe item))), is_selected item) in
+		select ?a ~name (option_of_item elem_hd) (List.map option_of_item elem_tl)
 end
 
 
