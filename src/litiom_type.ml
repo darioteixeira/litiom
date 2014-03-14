@@ -29,7 +29,7 @@ sig
 	include SIMPLE_BASE
 
 	val describe: t -> string
-	val elems: t list
+	val all: t list
 end
 
 
@@ -179,7 +179,7 @@ struct
 	include Base
 	include (Make_simple (Base): SIMPLE_SEMI with type t := t)
 
-	let choose ?a ~name ?value ?(allowed = elems) ?(transform = String.capitalize) () =
+	let choose ?a ~name ?value ?(allowed = all) ?(transform = String.capitalize) () =
 		let (elem_hd, elem_tl) = match allowed with
 			| hd :: tl -> (hd, tl)
 			| []	   -> invalid_arg "Litiom_type.choose" in

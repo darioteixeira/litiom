@@ -122,7 +122,7 @@ sig
 	include SIMPLE_BASE
 
 	val describe: t -> string
-	val elems: t list
+	val all: t list
 end
 
 
