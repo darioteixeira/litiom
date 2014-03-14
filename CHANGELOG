@@ -1,4 +1,16 @@
 -------------------------
+(?) version 2.2:
+
+  * In CHOICE_BASE signature, rename 'elems' to 'all' for compatibility with Enumerate syntax extension.
+  * Function 'choose' now accepts 'transform' optional function as parameter (defaults to String.Capitalize).
+  * List of elements now of type 't list' (may be empty) instead of 't * t list'.
+    Accordingly, parameter 'allowed' in function 'choose' is now also of type 't list'.
+    (The function will raise Invalid_argument if provided with an empty list, however).
+  * Check for value only once in function 'choose'.
+  * Select now takes 'required' optional parameter, in track with latest Eliom update.
+
+
+-------------------------
 (2013-08-28) version 2.1:
 
   * Added support for all HTML5 input types.
