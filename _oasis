@@ -1,6 +1,6 @@
 OASISFormat:		0.3
 Name:			litiom
-Version:		2.1
+Version:		3.0
 Synopsis:		Extensions to Ocsigen's Eliom
 Authors:		Dario Teixeira
 License:		LGPL-2.1 with OCaml linking exception
@@ -10,7 +10,7 @@ BuildTools:		ocamlbuild, make
 
 Library "litiom"
   Path:			src
-  Modules:		Litiom_type
+  Modules:		Litiom_type, Litiom_choice
   BuildDepends:		threads, eliom.server
 
 Document "litiom"

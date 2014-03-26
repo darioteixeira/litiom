@@ -1,6 +1,6 @@
 (********************************************************************************)
 (*	Litiom_type.mli
-	Copyright (c) 2011-2012 Dario Teixeira (dario.teixeira@yahoo.com)
+	Copyright (c) 2011-2014 Dario Teixeira (dario.teixeira@yahoo.com)
 *)
 (********************************************************************************)
 
@@ -18,8 +18,8 @@
 
 	let coucou1_service =
 		Eliom_registration.Html5.register_service
-			~path: ["coucou1"]
-			~get_params: (Eliom_parameter.int32 "x")
+			~path:["coucou1"]
+			~get_params:(Eliom_parameter.int32 "x")
 			coucou1_handler
 
 	let coucou1_form enter_x =
@@ -79,7 +79,7 @@
 	Moreover, user-defined types are easily accommodated.  [Litiom_type] provides
 	a functorial interface to create new modules compatible with its approach:
 	{v
-	module Coucou = Litiom_type.Make_simple
+	module Coucou = Litiom_type.Make
 	(struct
 		type t = [ `A | `B | `C ]
 
@@ -108,7 +108,7 @@ open Eliom_content
 (**	{2 Bases for functors}							*)
 (********************************************************************************)
 
-module type SIMPLE_BASE =
+module type STRINGABLE =
 sig
 	type t
 
@@ -117,22 +117,13 @@ sig
 end
 
 
-module type CHOICE_BASE =
-sig
-	include SIMPLE_BASE
-
-	val describe: t -> string
-	val all: t list
-end
-
-
 (********************************************************************************)
-(**	{2 Partial results of functors}						*)
+(**	{2 Results of functors}							*)
 (********************************************************************************)
 
-module type SIMPLE_SEMI =
+module type S =
 sig
-	type t
+	include STRINGABLE
 
 	val param:
 		string ->
@@ -190,24 +181,9 @@ sig
 end
 
 
-module type CHOICE_SEMI =
+module type TEXTUAL =
 sig
-	type t
-
-	val choose:
-		?a:Html5_types.select_attrib Html5.F.attrib list ->
-		name:[< `One of t ] Eliom_parameter.param_name ->
-		?value:t ->
-		?allowed:t list ->
-		?transform:(string -> string) ->
-		unit ->
-		[> Html5_types.select ] Html5.F.elt
-end
-
-
-module type TEXTUAL_SEMI =
-sig
-	type t = string
+	include S with type t = string
 
 	val textarea:
 		?a:Html5_types.textarea_attrib Html5.F.attrib list ->
@@ -219,54 +195,20 @@ end
 
 
 (********************************************************************************)
-(**	{2 Full results of functors}						*)
-(********************************************************************************)
-
-module type SIMPLE_S =
-sig
-	type t
-
-	include SIMPLE_BASE with type t := t
-	include SIMPLE_SEMI with type t := t
-end
-
-
-module type CHOICE_S =
-sig
-	type t
-
-	include CHOICE_BASE with type t := t
-	include SIMPLE_SEMI with type t := t
-	include CHOICE_SEMI with type t := t
-end
-
-
-module type TEXTUAL_S =
-sig
-	type t = string
-
-	include SIMPLE_BASE with type t := t
-	include SIMPLE_SEMI with type t := t
-	include TEXTUAL_SEMI with type t := t
-end
-
-
-(********************************************************************************)
 (**	{1 Functors}								*)
 (********************************************************************************)
 
-module Make_simple: functor (Base: SIMPLE_BASE) -> SIMPLE_S with type t = Base.t
-module Make_choice: functor (Base: CHOICE_BASE) -> CHOICE_S with type t = Base.t
-module Make_textual: functor (Base: SIMPLE_BASE with type t = string) -> TEXTUAL_S
+module Make: functor (Base: STRINGABLE) -> S with type t = Base.t
+module Make_textual: functor (Base: STRINGABLE with type t = string) -> TEXTUAL
 
 
 (********************************************************************************)
 (**	{1 Predefined modules based on primitive types}				*)
 (********************************************************************************)
 
-module Int: SIMPLE_S with type t = int
-module Int32: SIMPLE_S with type t = int32
-module Int64: SIMPLE_S with type t = int64
-module Float: SIMPLE_S with type t = float
-module String: TEXTUAL_S
+module Int: S with type t = int
+module Int32: S with type t = int32
+module Int64: S with type t = int64
+module Float: S with type t = float
+module String: TEXTUAL
 

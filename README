@@ -13,8 +13,9 @@
 Litiom aims to complement Eliom, the web programming framework part of the
 Ocsigen project [1].  Litiom is basically a collection of modules offering
 high-level constructs for web programming.  Presently, the library contains
-only the Litiom_type module, which contains facilities for improving modularity
-and abstraction in Eliom applications.
+the modules Litiom_type (for improving modularity and abstraction in Eliom
+applications), and Litiom_choice (for making the construction of select boxes
+easier and more convenient).
 
 
 2. Dependencies

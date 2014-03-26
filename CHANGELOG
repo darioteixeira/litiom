@@ -1,7 +1,9 @@
 -------------------------
-(?) version 2.2:
+(?) version 3.0:
 
-  * In CHOICE_BASE signature, rename 'elems' to 'all' for compatibility with Enumerate syntax extension.
+  * Split off 'choose' related code into Litiom_choice module.  As a consequence, functors and interfaces
+    have been renamed.
+  * In CHOOSABLE signature, rename 'elems' to 'all' for compatibility with Enumerate syntax extension.
   * Function 'choose' now accepts 'transform' optional function as parameter (defaults to String.Capitalize).
   * List of elements now of type 't list' (may be empty) instead of 't * t list'.
     Accordingly, parameter 'allowed' in function 'choose' is now also of type 't list'.
