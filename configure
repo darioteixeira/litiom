@@ -3,12 +3,14 @@
 # OASIS_START
 # DO NOT EDIT (digest: dc86c2ad450f91ca10c931b6045d0499)
 set -e
+
 FST=true
 for i in "$@"; do
   if $FST; then
     set --
     FST=false
   fi
+
   case $i in
     --*=*)
       ARG=${i%%=*}
@@ -20,5 +22,6 @@ for i in "$@"; do
       ;;
   esac
 done
+
 ocaml setup.ml -configure "$@"
 # OASIS_STOP
