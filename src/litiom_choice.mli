@@ -133,7 +133,7 @@ sig
 	
 	val choose:
 		?a:Html5_types.select_attrib Html5.F.attrib list ->
-		name:[< `One of t ] Eliom_parameter.param_name ->
+		name:[ `One of t ] Eliom_parameter.param_name ->
 		?value:t ->
 		?allowed:t list ->
 		?transform:(string -> string) ->
