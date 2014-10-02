@@ -1,4 +1,10 @@
 -------------------------
+(2014-10-02) version 4.0:
+
+  * Port to Eliom 4.1.
+
+
+-------------------------
 (2014-05-27) version 3.0:
 
   * Split off 'choose' related code into Litiom_choice module.  As a consequence, functors and interfaces
