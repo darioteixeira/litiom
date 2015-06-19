@@ -1,8 +1,9 @@
 # OASIS_START
-# DO NOT EDIT (digest: 541fd5bf481688f6bebdf69c6385baa3)
+# DO NOT EDIT (digest: abd0f08c2be5e983e7d422cdf1975d11)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
+true: annot, bin_annot
 <**/.svn>: -traverse
 <**/.svn>: not_hygienic
 ".bzr": -traverse
@@ -15,6 +16,6 @@
 "_darcs": not_hygienic
 # Library litiom
 "src/litiom.cmxs": use_litiom
-<src/*.ml{,i}>: pkg_eliom.server
-<src/*.ml{,i}>: pkg_threads
+<src/*.ml{,i,y}>: pkg_eliom.server
+<src/*.ml{,i,y}>: pkg_threads
 # OASIS_STOP
