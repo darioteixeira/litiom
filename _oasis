@@ -1,24 +1,24 @@
-OASISFormat:		0.3
-Name:			litiom
-Version:		4.0
-Synopsis:		Extensions to Ocsigen's Eliom
-Authors:		Dario Teixeira
-License:		LGPL-2.1 with OCaml linking exception
-LicenseFile:		LICENSE
-Plugins:		META (0.3), DevFiles (0.3)
-BuildTools:		ocamlbuild, make
+OASISFormat:    0.3
+Name:           litiom
+Version:        4.0
+Synopsis:       Extensions to Ocsigen's Eliom
+Authors:        Dario Teixeira
+License:        LGPL-2.1 with OCaml linking exception
+LicenseFile:    LICENSE
+Plugins:        META (0.3), DevFiles (0.3)
+BuildTools:     ocamlbuild, make
 
 Library "litiom"
-  Path:			src
-  Modules:		Litiom_type, Litiom_choice
-  BuildDepends:		threads, eliom.server
+    Path:           src
+    Modules:        Litiom_type, Litiom_choice
+    BuildDepends:   threads, eliom.server
 
 Document "litiom"
-  Install:		true
-  InstallDir:		$htmldir
-  Title:		API reference for Litiom
-  Type:			ocamlbuild (0.3)
-  BuildTools+:		ocamldoc
-  XOCamlbuildPath:	src
-  XOCamlbuildLibraries:	litiom
+    Install:                true
+    InstallDir:             $htmldir
+    Title:                  API reference for Litiom
+    Type:                   ocamlbuild (0.3)
+    BuildTools+:            ocamldoc
+    XOCamlbuildPath:        src
+    XOCamlbuildLibraries:   litiom
 
