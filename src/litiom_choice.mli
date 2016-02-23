@@ -1,6 +1,6 @@
 (********************************************************************************)
 (*  Litiom_choice.mli
-    Copyright (c) 2011-2015 Dario Teixeira <dario.teixeira@nleyten.com>
+    Copyright (c) 2011-2016 Dario Teixeira <dario.teixeira@nleyten.com>
 *)
 (********************************************************************************)
 
