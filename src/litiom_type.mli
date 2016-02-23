@@ -26,8 +26,8 @@
         [
         fieldset
             [
-            label ~a:[a_for enter_x] [pcdata "Enter X:"];
-            int32_input ~input_type:`Text ~name:enter_x ();
+            label [pcdata "Enter X:"];
+            Form.input ~input_type:`Text ~name:enter_x Form.int32;
             ]
         ]
     v}
@@ -64,8 +64,22 @@
         [
         fieldset
             [
-            label ~a:[a_for enter_x] [pcdata "Enter X:"];
+            label [pcdata "Enter X:"];
             Coucou.input ~input_type:`Text ~name:enter_x ();
+            ]
+        ]
+    v}
+
+    If you prefer Eliom5's convention of using [Form.input], this module also
+    defines [Coucou.typ] as the witness parameter to [Form.input].  The function
+    [coucou2_form] defined above has therefore an alternative formulation:
+    {v
+    let coucou2_form enter_x =
+        [
+        fieldset
+            [
+            label [pcdata "Enter X:"];
+            Form.input ~input_type:`Text ~name:enter_x Coucou.typ;
             ]
         ]
     v}
@@ -104,10 +118,6 @@ open Eliom_content
 (** {1 Module types}                                                            *)
 (********************************************************************************)
 
-(********************************************************************************)
-(** {2 Bases for functors}                                                      *)
-(********************************************************************************)
-
 module type STRINGABLE =
 sig
     type t
@@ -115,11 +125,6 @@ sig
     val of_string: string -> t
     val to_string: t -> string
 end
-
-
-(********************************************************************************)
-(** {2 Results of functors}                                                     *)
-(********************************************************************************)
 
 module type S =
 sig
@@ -129,26 +134,17 @@ sig
         string ->
         (t, [ `WithoutSuffix ], [ `One of t ] Eliom_parameter.param_name) Eliom_parameter.params_type
 
+    val typ: t Html5.F.Form.param
+
     val input:
         ?a:Html5_types.input_attrib Html5.F.attrib list ->
-        input_type:
-            [< `Button | `Checkbox | `Color | `Date | `Datetime | `Datetime_local | `Email
-            | `File | `Hidden | `Image | `Month | `Number | `Password | `Radio | `Range
-            | `Reset | `Search | `Submit | `Tel | `Text | `Time | `Url | `Week ] ->
+        input_type:[< Html5_types.input_type ] ->
         ?name:[< t Eliom_parameter.setoneradio ] Eliom_parameter.param_name ->
         ?value:t ->
         unit ->
         [> Html5_types.input ] Html5.F.elt
 
-    val image_input:
-        ?a:Html5_types.input_attrib Html5.F.attrib list ->
-        name:[< (t * Eliom_parameter.coordinates) Eliom_parameter.oneradio ] Eliom_parameter.param_name ->
-        value:t ->
-        ?src:Html5.F.uri ->
-        unit ->
-        [> Html5_types.input ] Html5.F.elt
-
-    val checkbox:
+    val checkbox :
         ?a:Html5_types.input_attrib Html5.F.attrib list ->
         ?checked:bool ->
         name:[ `Set of t ] Eliom_parameter.param_name ->
@@ -166,8 +162,10 @@ sig
 
     val button:
         ?a:Html5_types.button_attrib Html5.F.attrib list ->
+        button_type:[< Eliom_form_sigs.button_type ] ->
         name:[< t Eliom_parameter.setone ] Eliom_parameter.param_name ->
         value:t ->
+        unit ->
         Html5_types.button_content Html5.F.elt list ->
         [> Html5_types.button ] Html5.F.elt
 
@@ -175,11 +173,18 @@ sig
         ?a:Html5_types.select_attrib Html5.F.attrib list ->
         ?required:Html5_types.pcdata Html5.F.elt ->
         name:[ `One of t ] Eliom_parameter.param_name ->
-        t Html5.F.select_opt ->
-        t Html5.F.select_opt list ->
+        t Html5.F.Form.select_opt ->
+        t Html5.F.Form.select_opt list ->
+        [> Html5_types.select ] Html5.F.elt
+
+    val multiple_select:
+        ?a:Html5_types.select_attrib Html5.F.attrib list ->
+        ?required:Html5_types.pcdata Html5.F.elt ->
+        name:[ `Set of t ] Eliom_parameter.param_name ->
+        t Html5.F.Form.select_opt ->
+        t Html5.F.Form.select_opt list ->
         [> Html5_types.select ] Html5.F.elt
 end
-
 
 module type TEXTUAL =
 sig
@@ -199,16 +204,16 @@ end
 (********************************************************************************)
 
 module Make: functor (Base: STRINGABLE) -> S with type t = Base.t
-module Make_textual: functor (Base: STRINGABLE with type t = string) -> TEXTUAL
 
 
 (********************************************************************************)
-(** {1 Predefined modules based on primitive types}                             *)
+(** {1 Predefined modules}                                                      *)
 (********************************************************************************)
 
+module Float: S with type t = float
 module Int: S with type t = int
 module Int32: S with type t = int32
 module Int64: S with type t = int64
-module Float: S with type t = float
+module Bool: S with type t = bool
 module String: TEXTUAL
 

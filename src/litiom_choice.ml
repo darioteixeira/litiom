@@ -78,7 +78,7 @@ struct
             | Some v -> fun item -> item = v
             | None   -> fun item -> false in
         let option_of_item item =
-            Html5.F.Option ([], item, Some (Html5.F.pcdata (transform (describe item))), is_selected item) in
+            Html5.F.Form.Option ([], item, Some (Html5.F.pcdata (transform (describe item))), is_selected item) in
         select ?a ~name (option_of_item elem_hd) (List.map option_of_item elem_tl)
 end
 
