@@ -25,14 +25,14 @@ let coucou_form enter_x =
     ]
 
 let main_handler () () =
-	Lwt.return
-		(html
-		(head (title (pcdata "Main")) [])
-		(body [Form.get_form coucou_service coucou_form]))
+    Lwt.return
+        (html
+        (head (title (pcdata "Main")) [])
+        (body [Form.get_form coucou_service coucou_form]))
 
 let main_service =
-	Eliom_registration.Html5.register_service
-		~path:[]
-		~get_params:Eliom_parameter.unit
-		main_handler
+    Eliom_registration.Html5.register_service
+        ~path:[]
+        ~get_params:Eliom_parameter.unit
+        main_handler
 
