@@ -1,9 +1,3 @@
-(********************************************************************************)
-(*  Litiom_choice.mli
-    Copyright (c) 2011-2016 Dario Teixeira <dario.teixeira@nleyten.com>
-*)
-(********************************************************************************)
-
 (** Facilities for making select boxes more convenient and easier to use.
 
     Eliom's [select] family of functions provides a powerful and complete

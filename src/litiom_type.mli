@@ -1,9 +1,3 @@
-(********************************************************************************)
-(*  Litiom_type.mli
-    Copyright (c) 2011-2016 Dario Teixeira <dario.teixeira@nleyten.com>
-*)
-(********************************************************************************)
-
 (** Facilities for improving modularity and abstraction in Eliom applications.
 
     Suppose you have a service [coucou1] which accepts an [int32] as parameter.
